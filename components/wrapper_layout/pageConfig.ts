@@ -29,6 +29,12 @@ export const pageConfigs: PageConfig[] = [
         pageTitle: "Your Habits",
         headerType: "default",
         footerShown: true
+    },
+     {
+        page:"/tasks",
+        pageTitle: "Your Tasks",
+        headerType: "default",
+        footerShown: true
     }
 ]
 
@@ -37,10 +43,10 @@ export const pageConfigs: PageConfig[] = [
 
 
 export const footerItems = [
-        { icon: Ionicons, iconName:"today-outline", title: 'Home', value:"/home", type:"redirect" },
+        { icon: Ionicons, iconName:"today-outline", title: 'Today', value:"/home", type:"redirect" },
         { icon: Ionicons,iconName:"stats-chart-outline", title: 'Search', value:"/search",type:"redirect" },
         { icon: AntDesign ,iconName:"plus", title: 'Add', value: "/add",type:"event" },
         { icon: Entypo,iconName:"line-graph", title: 'Habits',value: "/habits",type:"redirect"  },
-        { icon: Entypo,iconName:"notification", title: 'Tasks',value: "/add",type:"redirect"  }
+        { icon: Entypo,iconName:"notification", title: 'Tasks',value: "/tasks",type:"redirect"  }
 ];
 

@@ -12,12 +12,12 @@ import { RelativePathString, router, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { ReactNode, useEffect } from 'react';
 import {
-    DeviceEventEmitter,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import DateRangePicker from '../home_page_components/DateRangePicker';
 import { useAppWrapper } from './AppWrapperContext';
 import { footerItems, pageConfigs } from './pageConfig';
 import Sidebar from './SideBar';
@@ -25,8 +25,7 @@ import { styles } from './styles';
 import { Toast } from './Toast';
 import { IconItem } from './types';
 
-
-const eventEmitter = DeviceEventEmitter;
+import { eventEmitter } from '@/constants/eventEmitter';
 
 
 
@@ -78,24 +77,28 @@ export function AppWrapperComponent({ children }: { children: ReactNode }) {
         }
     }, [pathName])
 
-    useEffect(() => {
-        const subscriptionError = eventEmitter.addListener('errorEvent', (event: any) => {
+   useEffect(() => {
+    const handleError = (event: any) => {
+        if (event?.error) {
+            dispatch({ type: "SET_ERRORS", payload: [...state.errors, event.error || ""] });
+        }
+    };
 
-            if (event?.error) {
-                dispatch({ type: "SET_ERRORS", payload: [...state.errors, event?.error || ""] });
-            }
-        });
-        const subscriptionSuccess = eventEmitter.addListener('successEvent', (event: any) => {
+    const handleSuccess = (event: any) => {
+        if (event?.success) {
+            dispatch({ type: "SET_SUCCESSES", payload: [...state.successes, event.success || ""] });
+        }
+    };
 
-            if (event?.success) {
-                dispatch({ type: "SET_SUCCESSES", payload: [...state.successes, event?.success || ""] });
-            }
-        });
-        return () => {
-            subscriptionError.remove();
-            subscriptionSuccess.remove();
-        };
-    }, []);
+    eventEmitter.on('errorEvent', handleError);
+    eventEmitter.on('successEvent', handleSuccess);
+
+    return () => {
+        eventEmitter.off('errorEvent', handleError);
+        eventEmitter.off('successEvent', handleSuccess);
+    };
+}, [state.errors, state.successes]);
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar style="auto" />
@@ -111,7 +114,9 @@ export function AppWrapperComponent({ children }: { children: ReactNode }) {
                             </TouchableOpacity>
                             <Text style={styles.appName}>{appName}</Text>
                         </View>
-                        <View style={styles.iconButton} />
+                        <View>
+                            <DateRangePicker />
+                        </View>
                     </View> : null
             }
 

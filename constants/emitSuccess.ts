@@ -1,5 +1,4 @@
-import { DeviceEventEmitter } from 'react-native';
-const eventEmitter = DeviceEventEmitter; 
+import { eventEmitter } from "./eventEmitter";
 
  export const emitSuccess = (successMessage: String) => {
         eventEmitter.emit("successEvent", { success: successMessage,time: new Date().toISOString() });

@@ -52,11 +52,10 @@ export async function initiateDB() {
             task_name TEXT NOT NULL,
             category TEXT,
             reminder TEXT,
-            date TEXT NOT NULL,
+            start_date TEXT NOT NULL,
             end_date TEXT,
             task_point INTEGER DEFAULT 0,
             negative_task_point INTEGER DEFAULT 0,
-            completed INTEGER DEFAULT 0,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (category) REFERENCES category (name)
         );
@@ -86,31 +85,6 @@ export async function initiateDB() {
             FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
             FOREIGN KEY (subtask_id) REFERENCES subtasks (id) ON DELETE CASCADE
         );
-
-        -- ========================
-        -- TRIGGER: VALIDATE COMPLETION DATE
-        -- ========================
-        CREATE TRIGGER IF NOT EXISTS validate_completion_date
-        BEFORE INSERT ON completions
-        BEGIN
-            -- Validate habit start date matches today (if habit_id is given)
-            SELECT 
-                CASE 
-                    WHEN NEW.habit_id IS NOT NULL AND 
-                        (SELECT date(start_date) FROM habits WHERE id = NEW.habit_id) != date('now')
-                    THEN
-                        RAISE(ABORT, 'Habit start_date must match today''s date')
-                END;
-
-            -- Validate task start date matches today (if task_id is given)
-            SELECT 
-                CASE 
-                    WHEN NEW.task_id IS NOT NULL AND 
-                        (SELECT date(start_date) FROM tasks WHERE id = NEW.task_id) != date('now')
-                    THEN
-                        RAISE(ABORT, 'Task start_date must match today''s date')
-                END;
-        END;
         `)
 
         console.log("Database created successfully.");

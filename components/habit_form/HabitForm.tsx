@@ -112,7 +112,7 @@ export default function HabitForm() {
             mode="time"
             onChange={(e, date) => {
               setShowReminder(false);
-              console.log("date", date);
+            
               if (date) dispatch({ type: "SET_REMINDER_TIME", payload: date });
             }}
           />

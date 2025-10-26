@@ -19,8 +19,9 @@ export default function RootLayout() {
   return (
 
     <SafeAreaProvider>
-      <AppWrapperProvider>
-        <HomeProvider>
+      <HomeProvider>
+        <AppWrapperProvider>
+
 
           <Stack
             screenOptions={{
@@ -32,9 +33,10 @@ export default function RootLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="home" />
           </Stack>
-          <CreateOptionPopup/>
-        </HomeProvider>
-      </AppWrapperProvider>
+          <CreateOptionPopup />
+
+        </AppWrapperProvider>
+      </HomeProvider>
 
     </SafeAreaProvider>
 

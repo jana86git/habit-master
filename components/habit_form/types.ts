@@ -44,4 +44,13 @@ export type Action =
   | { type: "SET_TARGET_UNIT"; payload: string | null }
   | { type: "SET_CATEGORY"; payload: string | null };
 
-    
+export type HabitRecord = {
+  id: string;
+  habit_name: string;
+  category: string | null;
+  start_date: string;
+  end_date: string | null;
+  task_point: number;
+  negative_task_point: number;
+  frequency: string;
+};

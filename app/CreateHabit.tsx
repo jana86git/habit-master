@@ -88,8 +88,8 @@ function SubmitButton() {
         ) VALUES (
             '${habitId}',
             '${habitName}',
-            '${startDate}',
-            ${endDate ? `'${endDate}'` : 'NULL'},
+            '${startDate.toISOString()}',
+            ${endDate ? `'${endDate.toISOString()}'` : 'NULL'},
             ${category ? `'${category}'` : 'NULL'},
             ${reminderTime ? `'${reminderTime}'` : 'NULL'},
             '${frequency}',
@@ -106,7 +106,6 @@ function SubmitButton() {
 
         try {
             await db.execAsync(sql);
-            console.log('Habit inserted successfully!');
             setLoading(false);
         } catch (error) {
             console.error('Transaction failed and rolled back:', error);

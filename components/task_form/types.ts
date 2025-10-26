@@ -1,4 +1,5 @@
 export interface Subtask{
+  id: string
   name: string,
   point: number
 }
@@ -11,6 +12,30 @@ export interface InitialState {
     negativeTaskPoint: number;
     category:string | null;
     subtasks: Subtask[]
+}
+
+
+
+export interface Task {
+    id: string;
+    task_name: string;
+    task_point: number;
+    negative_task_point: number;
+    start_date: string;
+    end_date: string | null;
+    category: string | null;
+    
+}
+
+export interface TaskWithSubtask {
+    id: string;
+    task_name: string;
+    task_point: number;
+    negative_task_point: number;
+    start_date: string;
+    end_date: string | null;
+    category: string | null;
+    subtasks: Subtask[];
 }
 
 export type Action =
