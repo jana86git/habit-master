@@ -4,6 +4,7 @@ import { Button, Text, TouchableOpacity, View } from "react-native";
 import TextInputComponent from "../text_input/TextInput";
 import { useTaskForm } from "./TaskFormContext";
 import { styles } from "./styles";
+import { Subtask } from "./types";
 
 export default function TaskForm() {
   const { state, dispatch } = useTaskForm();
@@ -18,7 +19,7 @@ export default function TaskForm() {
     if (!subtaskName) return;
     dispatch({
       type: "ADD_SUBTASK",
-      payload: { name: subtaskName, point: Number(subtaskPoint) || 0 },
+      payload: { name: subtaskName, point: Number(subtaskPoint) || 0 } as Subtask,
     });
     setSubtaskName("");
     setSubtaskPoint("");

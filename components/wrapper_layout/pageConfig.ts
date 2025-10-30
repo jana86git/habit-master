@@ -27,13 +27,13 @@ export const pageConfigs: PageConfig[] = [
     {
         page:"/habits",
         pageTitle: "Your Habits",
-        headerType: "default",
+        headerType: "back-button",
         footerShown: true
     },
      {
         page:"/tasks",
         pageTitle: "Your Tasks",
-        headerType: "default",
+        headerType: "back-button",
         footerShown: true
     }
 ]

@@ -10,7 +10,6 @@ import { TaskWithSubtask } from "../task_form/types";
 type CompletionStatus = {
     completed: boolean;
     point: number;
-    negative_point: number;
 };
 
 export default function TaskList() {
@@ -23,6 +22,7 @@ export default function TaskList() {
     /** ✅ Fetch tasks */
     async function fetchTasks(date: Date, page = 1, limit = 10) {
         try {
+            if (!db) return;
             const startOfDay = new Date(date);
             startOfDay.setHours(0, 0, 0, 0);
             const endOfDay = new Date(date);
@@ -30,36 +30,49 @@ export default function TaskList() {
 
             const offset = (page - 1) * limit;
 
+            const query = `
+            SELECT 
+                t.id,
+                t.task_name,
+                t.category,
+                t.start_date,
+                t.end_date,
+                t.task_point,
+                t.negative_task_point,
+                COALESCE(
+                    (
+                        SELECT json_group_array(
+                            json_object(
+                                'id', s.id,
+                                'name', s.name,
+                                'point', s.point
+                            )
+                        )
+                        FROM subtasks s
+                        WHERE s.task_id = t.id
+                    ),
+                    '[]'
+                ) AS subtasks
+            FROM tasks t
+            WHERE 
+                (
+                    (t.end_date IS NULL AND DATE(t.start_date) = DATE(?))
+                    OR
+                    (t.end_date IS NOT NULL AND t.end_date >= ? AND t.end_date <= ?)
+                )
+            ORDER BY t.created_at DESC
+            LIMIT ? OFFSET ?;
+        `;
+
             const tasksRaw = await db.getAllAsync<any>(
-                `
-      SELECT 
-        t.id,
-        t.task_name,
-        t.category,
-        t.start_date,
-        t.end_date,
-        t.task_point,
-        t.negative_task_point,
-        COALESCE(
-          (
-            SELECT json_group_array(
-                     json_object(
-                       'id', s.id,
-                       'name', s.name,
-                       'point', s.point
-                     )
-                   )
-            FROM subtasks s
-            WHERE s.task_id = t.id
-          ),
-          '[]'
-        ) AS subtasks
-      FROM tasks t
-      WHERE t.start_date >= ? AND t.start_date <= ?
-      ORDER BY t.created_at DESC
-      LIMIT ? OFFSET ?;
-      `,
-                [startOfDay.toISOString(), endOfDay.toISOString(), limit, offset]
+                query,
+                [
+                    startOfDay.toISOString(), // for start_date exact match
+                    startOfDay.toISOString(), // for range lower bound (end_date case)
+                    endOfDay.toISOString(),   // for range upper bound (end_date case)
+                    limit,
+                    offset,
+                ]
             );
 
             const results: TaskWithSubtask[] = (tasksRaw || []).map((t: any) => ({
@@ -73,7 +86,6 @@ export default function TaskList() {
                 subtasks: t.subtasks ? JSON.parse(t.subtasks) : [],
             }));
 
-
             setTasks(results);
         } catch (error) {
             console.error("Error fetching tasks:", error);
@@ -81,24 +93,27 @@ export default function TaskList() {
     }
 
 
+
     /** ✅ Fetch completions into a Map */
     async function fetchCompletionMap() {
         try {
             const query = `
-        SELECT task_id AS id, point, negative_point
+        SELECT task_id AS id, point
         FROM completions
         WHERE task_id IS NOT NULL
         UNION ALL
-        SELECT subtask_id AS id, point, negative_point
+        SELECT subtask_id AS id, point
         FROM completions
         WHERE subtask_id IS NOT NULL
       `;
+
+            if (!db) return;
             const rows = await db.getAllAsync<any>(query);
 
             const map = new Map(
                 rows.map(r => [
                     r.id,
-                    { completed: true, point: r.point, negative_point: r.negative_point },
+                    { completed: true, point: r.point },
                 ])
             );
             setCompletionMap(map);
@@ -109,6 +124,7 @@ export default function TaskList() {
 
     /** Toggle task completion (ignores subtasks) */
     const toggleTaskCompletion = async (task: TaskWithSubtask) => {
+        if (!db) return;
         if (!task) return;
 
         const today = new Date();
@@ -116,18 +132,24 @@ export default function TaskList() {
         const endDate = task.end_date ? new Date(task.end_date) : null;
 
         if (startDate > today || (endDate && endDate < today)) return;
+        let points = 0;
+        if (endDate && endDate < today) {
+            points -= task.negative_task_point;
+        }else{
+            points += task.task_point;
+        } 
 
         const current = completionMap.get(task.id);
         const newStatus = !current?.completed;
 
-        setCompletionMap(prev => new Map(prev).set(task.id, { completed: newStatus, point: task.task_point, negative_point: task.negative_task_point }));
+        setCompletionMap(prev => new Map(prev).set(task.id, { completed: newStatus, point: task.task_point }));
 
         try {
             if (newStatus) {
                 await db.runAsync(
-                    `INSERT INTO completions (id, task_id, log_date, point, negative_point)
-                 VALUES (?, ?, ?, ?, ?)`,
-                    [uuid.v4().toString(), task.id, new Date().toISOString(), task.task_point, task.negative_task_point]
+                    `INSERT INTO completions (id, task_id, log_date, point)
+                 VALUES (?, ?, ?, ?)`,
+                    [uuid.v4().toString(), task.id, new Date().toISOString(), points]
                 );
             } else {
                 await db.runAsync(
@@ -142,32 +164,33 @@ export default function TaskList() {
     };
 
     /** Toggle subtask completion (does NOT affect parent task) */
-   /** Toggle subtask completion (no task_id required) */
-const toggleSubtaskCompletion = async (subtaskId: string, point: number) => {
-    const current = completionMap.get(subtaskId);
-    const newStatus = !current?.completed;
+    /** Toggle subtask completion (no task_id required) */
+    const toggleSubtaskCompletion = async (subtaskId: string, point: number) => {
+        const current = completionMap.get(subtaskId);
+        const newStatus = !current?.completed;
 
-    // Update locally
-    setCompletionMap(prev => new Map(prev).set(subtaskId, { completed: newStatus, point, negative_point: 0 }));
+        // Update locally
+        setCompletionMap(prev => new Map(prev).set(subtaskId, { completed: newStatus, point}));
 
-    try {
-        if (newStatus) {
-            await db.runAsync(
-                `INSERT INTO completions (id, subtask_id, log_date, point, negative_point)
-                 VALUES (?, ?, ?, ?, ?)`,
-                [uuid.v4().toString(), subtaskId, new Date().toISOString(), point, 0]
-            );
-        } else {
-            await db.runAsync(
-                `DELETE FROM completions
+        try {
+            if (!db) return;
+            if (newStatus) {
+                await db.runAsync(
+                    `INSERT INTO completions (id, subtask_id, log_date, point)
+                 VALUES (?, ?, ?, ?)`,
+                    [uuid.v4().toString(), subtaskId, new Date().toISOString(), point]
+                );
+            } else {
+                await db.runAsync(
+                    `DELETE FROM completions
                  WHERE subtask_id = ?`,
-                [subtaskId]
-            );
+                    [subtaskId]
+                );
+            }
+        } catch (error) {
+            console.error("Error updating subtask completion:", error);
         }
-    } catch (error) {
-        console.error("Error updating subtask completion:", error);
-    }
-};
+    };
 
 
 
@@ -219,7 +242,7 @@ const toggleSubtaskCompletion = async (subtaskId: string, point: number) => {
                                     onPress={() =>
                                         toggleSubtaskCompletion(
 
-                                      
+
                                             subtask.id,
                                             subtask.point
                                         )
