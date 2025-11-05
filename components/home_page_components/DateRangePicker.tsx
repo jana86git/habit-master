@@ -13,8 +13,7 @@ export default function DateRangePicker() {
   const onChange = (event: any, selectedDate?: Date) => {
     setShowPicker(Platform.OS === "ios");
     if (selectedDate) {
-      console.log("selected date is ", selectedDate);
-      // setDate(selectedDate);  
+      
       dispatch({type:"SET_SELECTED_DATE", payload: selectedDate})      
     }
   };

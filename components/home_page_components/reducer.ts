@@ -1,4 +1,4 @@
-import { Action } from "./types";
+import { Action, CompletionStatus, HabitRecord } from "./types";
 export const initialState = {
     openCreateOption: false,
     createOptions: [
@@ -6,7 +6,9 @@ export const initialState = {
         {id:"2", label:"Task", disable: false}
     ],
     selectedCreateOption:"1",
-    selectedDate: new Date()
+    selectedDate: new Date(),
+    habitCompletionDetails: null as HabitRecord | null,
+    completionMap: new Map() as Map<string, CompletionStatus>,
 }
 
 export type InitialState = typeof initialState
@@ -19,6 +21,10 @@ export function reducer(state: InitialState, action: Action): InitialState {
             return { ...state, selectedCreateOption: action.payload };
         case "SET_SELECTED_DATE":
             return { ...state, selectedDate: action.payload };
+        case "SET_HABIT_COMPLETION_DETAILS":
+            return { ...state, habitCompletionDetails: action.payload };
+        case "SET_HABIT_COMPLETION_MAP":
+            return { ...state, completionMap: action.payload };
         default:
             return state;
     }

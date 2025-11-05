@@ -26,6 +26,9 @@ export function reducer(state: InitialState, action: Action): InitialState {
       return { ...state, negativeTaskPoint: action.payload };
     case "SET_CATEGORY":
       return { ...state, category: action.payload };
+    case "INITIATE_EDIT_TASK_DATA":
+      return action.payload
+
 
     // Subtasks
     case "ADD_SUBTASK":

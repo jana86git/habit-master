@@ -1,11 +1,12 @@
 import { useHome } from "@/app/home";
 import { colors } from "@/constants/colors";
+import { eventEmitter } from "@/constants/eventEmitter";
 import { db } from "@/db/db";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import uuid from 'react-native-uuid';
-import { TaskWithSubtask } from "../task_form/types";
+import uuid from "react-native-uuid";
+import { Subtask, TaskWithSubtask } from "../task_form/types";
 
 type CompletionStatus = {
     completed: boolean;
@@ -17,73 +18,75 @@ export default function TaskList() {
     const { selectedDate } = state;
 
     const [tasks, setTasks] = useState<TaskWithSubtask[]>([]);
-    const [completionMap, setCompletionMap] = useState<Map<string, CompletionStatus>>(new Map());
+    const [completionMap, setCompletionMap] = useState<
+        Map<string, CompletionStatus>
+    >(new Map());
 
-    /** ✅ Fetch tasks */
-    async function fetchTasks(date: Date, page = 1, limit = 10) {
+    /** ✅ Fetch tasks + subtasks separately (optimized) */
+    async function fetchTasks(date: Date) {
         try {
             if (!db) return;
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
 
-            const offset = (page - 1) * limit;
+            const dateStr = date.toISOString().split("T")[0];
 
-            const query = `
-            SELECT 
-                t.id,
-                t.task_name,
-                t.category,
-                t.start_date,
-                t.end_date,
-                t.task_point,
-                t.negative_task_point,
-                COALESCE(
-                    (
-                        SELECT json_group_array(
-                            json_object(
-                                'id', s.id,
-                                'name', s.name,
-                                'point', s.point
-                            )
-                        )
-                        FROM subtasks s
-                        WHERE s.task_id = t.id
-                    ),
-                    '[]'
-                ) AS subtasks
-            FROM tasks t
-            WHERE 
-                (
-                    (t.end_date IS NULL AND DATE(t.start_date) = DATE(?))
-                    OR
-                    (t.end_date IS NOT NULL AND t.end_date >= ? AND t.end_date <= ?)
-                )
-            ORDER BY t.created_at DESC
-            LIMIT ? OFFSET ?;
+            // 1️⃣ Fetch all tasks for the selected date
+            const tasksQuery = `
+        SELECT 
+          id,
+          task_name,
+          category,
+          start_date,
+          end_date,
+          task_point,
+          negative_task_point
+        FROM tasks
+        WHERE 
+          (
+            -- Single-day tasks
+            (end_date IS NULL AND substr(start_date, 1, 10) = ?)
+            OR
+            -- Range tasks that include the given date
+            (end_date IS NOT NULL 
+              AND substr(start_date, 1, 10) <= ? 
+              AND substr(end_date, 1, 10) >= ?)
+          )
+        ORDER BY created_at DESC;
+      `;
+
+            const tasksRaw = await db.getAllAsync(tasksQuery, [dateStr, dateStr, dateStr]);
+            if (!tasksRaw || tasksRaw.length === 0) {
+                setTasks([]);
+                return;
+            }
+
+            // 2️⃣ Collect all task IDs
+            const taskIds = tasksRaw.map((t: any) => t.id);
+
+            // 3️⃣ Fetch subtasks for those tasks (if any)
+            let subtasksRaw: Subtask[] = [];
+            if (taskIds.length > 0) {
+                const placeholders = taskIds.map(() => "?").join(", ");
+                const subtasksQuery = `
+          SELECT id, task_id, name, point
+          FROM subtasks
+          WHERE task_id IN (${placeholders});
         `;
+                subtasksRaw = await db.getAllAsync(subtasksQuery, taskIds);
+            }
 
-            const tasksRaw = await db.getAllAsync<any>(
-                query,
-                [
-                    startOfDay.toISOString(), // for start_date exact match
-                    startOfDay.toISOString(), // for range lower bound (end_date case)
-                    endOfDay.toISOString(),   // for range upper bound (end_date case)
-                    limit,
-                    offset,
-                ]
-            );
+            // 4️⃣ Group subtasks by task_id using a Map
+            const subtaskMap = new Map<string, Subtask[]>();
+            for (const s of subtasksRaw) {
+                if (!subtaskMap.has(s.task_id)) {
+                    subtaskMap.set(s.task_id, []);
+                }
+                subtaskMap.get(s.task_id)!.push(s);
+            }
 
-            const results: TaskWithSubtask[] = (tasksRaw || []).map((t: any) => ({
-                id: t.id,
-                task_name: t.task_name,
-                category: t.category,
-                start_date: t.start_date,
-                end_date: t.end_date,
-                task_point: t.task_point,
-                negative_task_point: t.negative_task_point,
-                subtasks: t.subtasks ? JSON.parse(t.subtasks) : [],
+            // 5️⃣ Merge tasks + subtasks efficiently
+            const results: TaskWithSubtask[] = tasksRaw.map((t: any) => ({
+                ...t,
+                subtasks: subtaskMap.get(t.id) || [],
             }));
 
             setTasks(results);
@@ -92,11 +95,11 @@ export default function TaskList() {
         }
     }
 
-
-
-    /** ✅ Fetch completions into a Map */
+    /** ✅ Fetch completion records into a Map */
     async function fetchCompletionMap() {
         try {
+            if (!db) return;
+
             const query = `
         SELECT task_id AS id, point
         FROM completions
@@ -104,98 +107,93 @@ export default function TaskList() {
         UNION ALL
         SELECT subtask_id AS id, point
         FROM completions
-        WHERE subtask_id IS NOT NULL
+        WHERE subtask_id IS NOT NULL;
       `;
 
-            if (!db) return;
             const rows = await db.getAllAsync<any>(query);
 
             const map = new Map(
-                rows.map(r => [
+                rows.map((r) => [
                     r.id,
                     { completed: true, point: r.point },
                 ])
             );
+
             setCompletionMap(map);
         } catch (error) {
             console.error("Error fetching completions:", error);
         }
     }
 
-    /** Toggle task completion (ignores subtasks) */
+    /** ✅ Toggle task completion (main task only) */
     const toggleTaskCompletion = async (task: TaskWithSubtask) => {
-        if (!db) return;
-        if (!task) return;
+        if (!db || !task) return;
 
         const today = new Date();
         const startDate = new Date(task.start_date);
         const endDate = task.end_date ? new Date(task.end_date) : null;
 
         if (startDate > today || (endDate && endDate < today)) return;
+
         let points = 0;
         if (endDate && endDate < today) {
             points -= task.negative_task_point;
-        }else{
+        } else {
             points += task.task_point;
-        } 
+        }
 
         const current = completionMap.get(task.id);
         const newStatus = !current?.completed;
 
-        setCompletionMap(prev => new Map(prev).set(task.id, { completed: newStatus, point: task.task_point }));
+        // Update local state immediately
+        setCompletionMap(
+            (prev) => new Map(prev).set(task.id, { completed: newStatus, point: task.task_point })
+        );
 
         try {
             if (newStatus) {
                 await db.runAsync(
                     `INSERT INTO completions (id, task_id, log_date, point)
-                 VALUES (?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?);`,
                     [uuid.v4().toString(), task.id, new Date().toISOString(), points]
                 );
             } else {
-                await db.runAsync(
-                    `DELETE FROM completions
-                 WHERE task_id = ?`,
-                    [task.id]
-                );
+                await db.runAsync(`DELETE FROM completions WHERE task_id = ?;`, [task.id]);
             }
         } catch (error) {
             console.error("Error updating task completion:", error);
         }
     };
 
-    /** Toggle subtask completion (does NOT affect parent task) */
-    /** Toggle subtask completion (no task_id required) */
+    /** ✅ Toggle subtask completion */
     const toggleSubtaskCompletion = async (subtaskId: string, point: number) => {
         const current = completionMap.get(subtaskId);
         const newStatus = !current?.completed;
 
-        // Update locally
-        setCompletionMap(prev => new Map(prev).set(subtaskId, { completed: newStatus, point}));
+        setCompletionMap(
+            (prev) => new Map(prev).set(subtaskId, { completed: newStatus, point })
+        );
 
         try {
             if (!db) return;
+
             if (newStatus) {
                 await db.runAsync(
                     `INSERT INTO completions (id, subtask_id, log_date, point)
-                 VALUES (?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?);`,
                     [uuid.v4().toString(), subtaskId, new Date().toISOString(), point]
                 );
             } else {
-                await db.runAsync(
-                    `DELETE FROM completions
-                 WHERE subtask_id = ?`,
-                    [subtaskId]
-                );
+                await db.runAsync(`DELETE FROM completions WHERE subtask_id = ?;`, [subtaskId]);
             }
         } catch (error) {
             console.error("Error updating subtask completion:", error);
         }
     };
 
-
-
-    /** ✅ Check completion status */
+    /** ✅ Helper functions */
     const isCompleted = (id: string) => completionMap.get(id)?.completed ?? false;
+    const point = (id: string) => completionMap.get(id)?.point ?? 0;
 
     useEffect(() => {
         if (selectedDate) {
@@ -206,11 +204,38 @@ export default function TaskList() {
         }
     }, [selectedDate]);
 
-    if (tasks.length === 0) return <View><Text>No tasks found</Text></View>;
+    useEffect(() => {
+        // subscribe to the habit refetch
+
+        async function handleTaskRefetch() {
+            if (selectedDate) {
+                (async () => {
+                    await fetchTasks(selectedDate);
+                    await fetchCompletionMap();
+                })();
+            }
+        }
+
+
+        eventEmitter.on('task-refetch', handleTaskRefetch);
+
+
+        return () => {
+            eventEmitter.off('task-refetch', handleTaskRefetch);
+
+        };
+    }, [selectedDate]);
+
+    if (tasks.length === 0)
+        return (
+            <View>
+                <Text>No tasks found</Text>
+            </View>
+        );
 
     return (
         <View style={styles.task_container}>
-            {tasks.map(task => (
+            {tasks.map((task) => (
                 <View key={task.id} style={styles.taskBlock}>
                     {/* Task */}
                     <TouchableOpacity
@@ -230,22 +255,22 @@ export default function TaskList() {
                         >
                             {task.task_name}
                         </Text>
+                        <Text style={{ color: colors.text }}>Points: {point(task.id)}</Text>
                     </TouchableOpacity>
+
+                    <Text style={{ color: colors.text }}>
+                        {task.start_date} -- {task.end_date}
+                    </Text>
 
                     {/* Subtasks */}
                     {task.subtasks?.length > 0 && (
                         <View style={styles.subtaskContainer}>
-                            {task.subtasks.map(subtask => (
+                            {task.subtasks.map((subtask) => (
                                 <TouchableOpacity
                                     key={subtask.id}
                                     style={styles.checkboxRow}
                                     onPress={() =>
-                                        toggleSubtaskCompletion(
-
-
-                                            subtask.id,
-                                            subtask.point
-                                        )
+                                        toggleSubtaskCompletion(subtask.id, subtask.point)
                                     }
                                 >
                                     <Ionicons
@@ -260,6 +285,9 @@ export default function TaskList() {
                                         ]}
                                     >
                                         {subtask.name}
+                                    </Text>
+                                    <Text style={{ color: colors.text }}>
+                                        Points: {point(subtask.id)}
                                     </Text>
                                 </TouchableOpacity>
                             ))}

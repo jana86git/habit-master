@@ -12,6 +12,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     initiateDB();
+    
   }, [])
 
 
@@ -25,8 +26,8 @@ export default function RootLayout() {
 
           <Stack
             screenOptions={{
-              animation: 'simple_push',
-              animationTypeForReplace: 'pop',
+              animation: 'none',
+              // animationTypeForReplace: 'pop',
               headerShown: false
             }}
           >

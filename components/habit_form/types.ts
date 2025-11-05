@@ -42,7 +42,9 @@ export type Action =
   | { type: "SET_TARGET_CONDITION"; payload: "At_Least" | "Less_Than" | "Exact" }
   | { type: "SET_TARGET_VALUE"; payload: number | null }
   | { type: "SET_TARGET_UNIT"; payload: string | null }
-  | { type: "SET_CATEGORY"; payload: string | null };
+  | { type: "SET_CATEGORY"; payload: string | null }
+  | { type: "INITIATE_EDIT_HABIT"; payload: InitialState };
+
 
 export type HabitRecord = {
   id: string;
@@ -53,4 +55,23 @@ export type HabitRecord = {
   task_point: number;
   negative_task_point: number;
   frequency: string;
+};
+
+export type HabitResponse = {
+  id: string;
+  habit_name: string;
+  start_date: string; // ISO date string
+  end_date: string | null;
+  category: string | null;
+  reminder: string | null;
+  frequency: "Hourly"|"Daily"|"Weekly"|"Monthly"|"Repeat_Every_N_Days"; // extend if more values
+  hourly_frequency_rate: number;
+  n_days_frequency_rate: number;
+  task_point: number;
+  negative_task_point: number;
+  evaluation_type: "Yes_Or_No" | "Numeric"; // extend if needed
+  target_condition:  "At_Least" | "Less_Than" | "Exact"; // extend if needed
+  target_value: number;
+  target_unit: string | null;
+  created_at: string; // ISO or SQLite datetime
 };

@@ -69,7 +69,9 @@ export function AppWrapperComponent({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (pathName) {
+            
             const pageConfig = pageConfigs?.find((config) => config.page === pathName)
+        
             if (pageConfig) {
                 dispatch({ type: "SET_PAGE_CONFIG", payload: pageConfig })
                 dispatch({ type: "SET_ACTIVE_PAGE", payload: pageConfig?.page })

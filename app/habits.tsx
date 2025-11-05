@@ -1,10 +1,11 @@
 import { styles } from "@/components/habbits/styles";
 import { colors } from "@/constants/colors";
+import { eventEmitter } from "@/constants/eventEmitter";
 import { db } from "@/db/db";
-import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome5, FontAwesome6, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, FlatList, Text, TouchableOpacity, View } from "react-native";
-
 // Habit type
 interface Habit {
   id: string;
@@ -30,6 +31,7 @@ export default function Habits() {
 
   // Fetch habits
   async function fetchHabits(page = 1, limit = 10): Promise<void> {
+    if(!db) return;
     const offset = (page - 1) * limit;
     const query = `
       SELECT * FROM habits
@@ -48,7 +50,9 @@ export default function Habits() {
 
   // Delete habit
   async function deleteHabit(id: string): Promise<void> {
+    
     try {
+      if(!db) return;
       await db.runAsync(`DELETE FROM habits WHERE id = ?`, [id]);
       fetchHabits();
     } catch (error) {
@@ -60,6 +64,23 @@ export default function Habits() {
   useEffect(() => {
     fetchHabits();
   }, []);
+  useEffect(() => {
+              // subscribe to the habit refetch
+  
+              async function handleRefetch() {
+                  await fetchHabits();
+              }
+      
+      
+      
+              eventEmitter.on('habit-refetch', handleRefetch);
+      
+      
+              return () => {
+                  eventEmitter.off('habit-refetch', handleRefetch);
+      
+              };
+          }, []);
 
   const renderItem = ({ item }: { item: Habit }) => (
     <TouchableOpacity style={styles.itemContainer}  onPress={() => Alert.alert(item.habit_name)}>
@@ -87,6 +108,16 @@ export default function Habits() {
       <TouchableOpacity onPress={() => deleteHabit(item.id)} style={styles.deleteButton}>
         <Ionicons name="trash-outline" size={24} color={colors.danger} />
       </TouchableOpacity>
+       <TouchableOpacity
+                    onPress={() => router.push({
+                        pathname: '/EditHabit',
+                        params: { id: item.id }
+                    })}
+
+                    style={styles.deleteButton}
+                >
+                    <FontAwesome6 name="edit" size={24} color={colors.primary} />
+                </TouchableOpacity>
     </TouchableOpacity>
   );
 

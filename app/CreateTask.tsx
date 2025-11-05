@@ -3,6 +3,7 @@ import TaskForm from "@/components/task_form/TaskForm"
 import TaskFormProvider, { useTaskForm } from "@/components/task_form/TaskFormContext"
 import { colors } from "@/constants/colors"
 import { emitError } from "@/constants/emitError"
+import { emitTasksRefetch } from "@/constants/emitRefetch"
 import { emitSuccess } from "@/constants/emitSuccess"
 import { db } from "@/db/db"
 import { useState } from "react"
@@ -36,7 +37,7 @@ function SubmitButton() {
     const [loading, setLoading] = useState(false);
 
     async function createTask() {
-        
+        if(!db) return;
         const {
             taskName,
             startDate,
@@ -137,12 +138,13 @@ function SubmitButton() {
 
                 await Promise.all(
                     subtasks.map(sub =>
-                        db.runAsync(insertSubtaskSQL, [uuid.v4().toString(), taskId, sub.name.trim(), sub.point])
+                        db?.runAsync(insertSubtaskSQL, [uuid.v4().toString(), taskId, sub.name.trim(), sub.point])
                     )
                 );
             }
 
             emitSuccess("Task created successfully!");
+            emitTasksRefetch();
         } catch (error) {
             console.error("❌ Error inserting task:", error);
             emitError("Failed to create task. Please try again.");

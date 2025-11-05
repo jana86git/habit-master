@@ -1,5 +1,5 @@
 
-import HabitList from "@/components/home_page_components/HabitList";
+import HabitList, { HabitCompletionModal } from "@/components/home_page_components/HabitList";
 import { initialState, InitialState, reducer } from "@/components/home_page_components/reducer";
 import TaskList from "@/components/home_page_components/TaskList";
 import { Action } from "@/components/home_page_components/types";
@@ -7,7 +7,7 @@ import { colors } from "@/constants/colors";
 import { eventEmitter } from "@/constants/eventEmitter";
 import { exportDatabase, importDatabase } from "@/db/db";
 import { createContext, Dispatch, useContext, useEffect, useMemo, useReducer } from "react";
-import { Button, ScrollView } from "react-native";
+import { Button, ScrollView, View } from "react-native";
 interface HOME_PAGE_CONTEXT_TYPE {
     state: InitialState,
     dispatch: Dispatch<Action>;
@@ -70,15 +70,18 @@ export default function Home() {
 
 
     return (
+        <View style={{ flex: 1 }}>
+            <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
 
-        <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+                <TaskList />
+                <HabitList />
 
-            <TaskList />
-            <HabitList />
-            <Button title="Export DB" onPress={exportDatabase} />
-            <Button title="Import DB" onPress={importDatabase} />
-             
-        </ScrollView>
+                <Button title="Export DB" onPress={exportDatabase} />
+                <Button title="Import DB" onPress={importDatabase} />
+
+            </ScrollView>
+            <HabitCompletionModal />
+        </View>
     )
 }
 

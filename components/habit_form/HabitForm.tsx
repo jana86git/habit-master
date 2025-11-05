@@ -231,9 +231,7 @@ export default function HabitForm() {
 
         />
       </View>}
-      <View style={{ marginTop: 20 }}>
-        <Button title="Save Habit" onPress={() => console.log(state)} />
-      </View>
+    
     </View>
   );
 }

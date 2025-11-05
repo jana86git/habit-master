@@ -1,19 +1,19 @@
 import { Action, InitialState } from "./types";
 export const initialState: InitialState = {
-    habitName:"",
-    startDate:new Date(),
-    endDate:null,
-    reminderTime: null,
-    frequency:"Daily",
-    hourlyFrequncyRate: 0,
-    nDaysFrequencyRate: 2,
-    taskPoint:5,
-    negativeTaskPoint:3,
-    evaluationType:"Numeric",
-    targetCondition: "At_Least",
-    targetValue:10,
-    targetUnit:null,
-    category: null
+  habitName: "",
+  startDate: new Date(),
+  endDate: null,
+  reminderTime: null,
+  frequency: "Daily",
+  hourlyFrequncyRate: 0,
+  nDaysFrequencyRate: 2,
+  taskPoint: 5,
+  negativeTaskPoint: 3,
+  evaluationType: "Numeric",
+  targetCondition: "At_Least",
+  targetValue: 10,
+  targetUnit: null,
+  category: null
 }
 
 export function reducer(state: InitialState, action: Action): InitialState {
@@ -56,6 +56,12 @@ export function reducer(state: InitialState, action: Action): InitialState {
 
     case "SET_REMINDER_TIME":
       return { ...state, reminderTime: action.payload };
+    case "INITIATE_EDIT_HABIT":
+      return {
+        ...state,
+        ...action.payload,
+      };
+
 
     default:
       return state;

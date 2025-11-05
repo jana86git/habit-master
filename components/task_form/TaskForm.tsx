@@ -31,7 +31,7 @@ export default function TaskForm() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create New Task</Text>
+     
 
       {/* Task Name */}
       <TextInputComponent
@@ -173,9 +173,7 @@ export default function TaskForm() {
         ))}
       </View>
 
-      <View style={{ marginTop: 20 }}>
-        <Button title="Save Task" onPress={() => console.log(state)} />
-      </View>
+   
     </View>
   );
 }

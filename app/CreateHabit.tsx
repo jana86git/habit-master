@@ -2,6 +2,8 @@ import HabitForm from "@/components/habit_form/HabitForm";
 import HabitFormProvider, { useHabitForm } from "@/components/habit_form/HabitFormContext";
 import { colors } from "@/constants/colors";
 import { emitError } from "@/constants/emitError";
+import { emitHabitRefetch } from "@/constants/emitRefetch";
+import { emitSuccess } from "@/constants/emitSuccess";
 import { db } from "@/db/db";
 import { useState } from "react";
 import { Button, View } from "react-native";
@@ -30,6 +32,7 @@ function SubmitButton() {
     const [loading, setLoading] = useState(false);
 
     async function createHabit() {
+        if(!db) return;
         const {
             habitName,
             startDate,
@@ -106,6 +109,8 @@ function SubmitButton() {
 
         try {
             await db.execAsync(sql);
+            emitSuccess("Habit created successfully");
+            emitHabitRefetch();
             setLoading(false);
         } catch (error) {
             console.error('Transaction failed and rolled back:', error);

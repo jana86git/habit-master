@@ -4,8 +4,10 @@ import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as SQLite from 'expo-sqlite';
 import { SQLiteDatabase } from 'expo-sqlite';
+import * as Updates from "expo-updates";
 import { Alert } from 'react-native';
-export let db: SQLiteDatabase = SQLite.openDatabaseSync('users.db');
+
+export let db: SQLiteDatabase | null = SQLite.openDatabaseSync('habits.db');
 
 export async function initiateDB() {
     try {
@@ -92,7 +94,25 @@ export async function initiateDB() {
         );
         `)
 
-        console.log("Database created successfully.");
+        // ============================
+        // 2. MIGRATIONS
+        // Add "absent" column if missing
+        // ============================
+
+        const columns = await db.getAllAsync("PRAGMA table_info(completions)");
+        const hasAbsent = columns.some((col:any) => col.name === "absent");
+
+        if (!hasAbsent) {
+            console.log("Adding 'absent' column to completions...");
+            await db.execAsync(`
+        ALTER TABLE completions
+        ADD COLUMN absent INTEGER CHECK (absent IN (0,1)) DEFAULT 0;
+      `);
+        }
+
+        console.log("✅ Database initialized successfully");
+
+        // await autoMarkAbsentCompletions();
     } catch (error) {
         console.error("Error creating database:", error);
     }
@@ -102,7 +122,7 @@ export async function closeDatabase() {
     if (db) {
         try {
             await db.closeAsync();
-            // db = null
+            db = null
             console.log('✅ Database connection closed');
         } catch (error) {
             console.error('❌ Failed to close database:', error);
@@ -113,7 +133,7 @@ export async function closeDatabase() {
 export function openDatabase() {
     if (!db) {
         try {
-            db = SQLite.openDatabaseSync('users.db');
+            db = SQLite.openDatabaseSync('habits.db');
         } catch (error) {
             console.error(error);
         }
@@ -127,7 +147,7 @@ export async function exportDatabase() {
 
 
 
-        const dbURI = Paths.document.uri + "/SQLite/users.db";
+        const dbURI = Paths.document.uri + "/SQLite/habits.db";
 
         //check if the file exist or not
         const file = new File(dbURI);
@@ -145,10 +165,10 @@ export async function exportDatabase() {
         await closeDatabase();
         await Sharing.shareAsync(dbURI, {
             mimeType: 'application/x-sqlite3',
-            dialogTitle: 'Export users.db',
+            dialogTitle: 'Export habits.db',
             UTI: 'public.database',
         });
-         openDatabase();
+        openDatabase();
 
     } catch (error) {
         console.error('Error exporting DB:', error);
@@ -170,11 +190,11 @@ export async function importDatabase() {
         const pickedUri = pickedAsset.uri;
         const pickedName = pickedAsset.name || pickedUri.split('/').pop();
 
-        // ✅ Ensure the filename is exactly "users.db"
-        if (pickedName !== 'users.db') {
+        // ✅ Ensure the filename is exactly "habits.db"
+        if (pickedName !== 'habits.db') {
             Alert.alert(
                 'Invalid File',
-                'Please select a file named "users.db".',
+                'Please select a file named "habits.db".',
             );
             return;
         }
@@ -188,7 +208,7 @@ export async function importDatabase() {
         }
 
 
-        const destinationFile = new File(`${sqliteDir.uri}/users.db`);
+        const destinationFile = new File(`${sqliteDir.uri}/habits.db`);
 
         // Check if file exists
         const exists = destinationFile.exists;
@@ -213,6 +233,11 @@ export async function importDatabase() {
         await pickedFile.copy(destinationFile);
         openDatabase();
         alert('Database imported successfully!');
+       
+
+await Updates.reloadAsync();
+
+       
     } catch (error) {
         await closeDatabase();
         openDatabase();

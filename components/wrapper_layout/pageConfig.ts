@@ -25,6 +25,18 @@ export const pageConfigs: PageConfig[] = [
         footerShown: false
     },
     {
+        page:"/EditTask",
+        pageTitle: "Edit Task",
+        headerType: "back-button",
+        footerShown: false
+    },
+    {
+        page:"/EditHabit",
+        pageTitle: "Edit Habit",
+        headerType: "back-button",
+        footerShown: false
+    },
+    {
         page:"/habits",
         pageTitle: "Your Habits",
         headerType: "back-button",

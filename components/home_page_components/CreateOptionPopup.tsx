@@ -22,7 +22,7 @@ export default function CreateOptionPopup() {
 
    useEffect(() => {
       const footerIconClickEvent = eventEmitter.addListener('footer-icon-click', (event: any) => {
-         console.log("event", event)
+        
          if (event?.title === "Add") {
             dispatch({ type: "SHOW_CREATE_OPTION", payload: true })
          }
