@@ -12,7 +12,8 @@ export interface InitialState {
     targetCondition: "At_Least" | "Less_Than" | "Exact";
     targetValue: number | null;
     targetUnit: string|null;
-    category:string |null
+    category:string |null;
+    reminder_event_id: string | null
 }
 
 export type Action =
@@ -74,4 +75,5 @@ export type HabitResponse = {
   target_value: number;
   target_unit: string | null;
   created_at: string; // ISO or SQLite datetime
+  reminder_event_id: string | null
 };

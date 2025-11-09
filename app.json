@@ -40,7 +40,14 @@
           }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-background-task",
+       [
+        "expo-calendar",
+        {
+          "calendarPermission": "The app needs to access your calendar."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

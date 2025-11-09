@@ -1,10 +1,10 @@
 import * as DocumentPicker from 'expo-document-picker';
 
+import { autoMarkAbsentCompletions } from '@/constants/autoRecheckAssignMark';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as SQLite from 'expo-sqlite';
 import { SQLiteDatabase } from 'expo-sqlite';
-import * as Updates from "expo-updates";
 import { Alert } from 'react-native';
 
 export let db: SQLiteDatabase | null = SQLite.openDatabaseSync('habits.db');
@@ -38,6 +38,12 @@ export async function initiateDB() {
             end_date TEXT,
             category TEXT,
             reminder TEXT,
+            reminder_event_id_android TEXT,
+            reminder_event_id_ios TEXT,
+            reminder_event_id_linux TEXT,
+            reminder_event_id_windows TEXT,
+            reminder_event_id_web TEXT,
+            reminder_event_id_macos TEXT,
             frequency TEXT NOT NULL,
             hourly_frequency_rate INTEGER,
             n_days_frequency_rate INTEGER,
@@ -61,7 +67,13 @@ export async function initiateDB() {
             category TEXT,
             reminder TEXT,
             start_date TEXT NOT NULL,
-            end_date TEXT,
+            end_date TEXT NOT NULL,
+            reminder_event_id_android TEXT,
+            reminder_event_id_ios TEXT,
+            reminder_event_id_linux TEXT,
+            reminder_event_id_windows TEXT,
+            reminder_event_id_web TEXT,
+            reminder_event_id_macos TEXT,
             task_point INTEGER DEFAULT 0,
             negative_task_point INTEGER DEFAULT 0,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -112,7 +124,7 @@ export async function initiateDB() {
 
         console.log("✅ Database initialized successfully");
 
-        // await autoMarkAbsentCompletions();
+        await autoMarkAbsentCompletions();
     } catch (error) {
         console.error("Error creating database:", error);
     }
@@ -235,7 +247,7 @@ export async function importDatabase() {
         alert('Database imported successfully!');
        
 
-await Updates.reloadAsync();
+// await Updates.reloadAsync();
 
        
     } catch (error) {

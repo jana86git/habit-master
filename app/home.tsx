@@ -3,6 +3,8 @@ import HabitList, { HabitCompletionModal } from "@/components/home_page_componen
 import { initialState, InitialState, reducer } from "@/components/home_page_components/reducer";
 import TaskList from "@/components/home_page_components/TaskList";
 import { Action } from "@/components/home_page_components/types";
+import TriggerBackgroundTask from "@/components/others/TriggerBackgroundTask";
+import { getEventById } from "@/constants/calenderAndroid";
 import { colors } from "@/constants/colors";
 import { eventEmitter } from "@/constants/eventEmitter";
 import { exportDatabase, importDatabase } from "@/db/db";
@@ -78,6 +80,8 @@ export default function Home() {
 
                 <Button title="Export DB" onPress={exportDatabase} />
                 <Button title="Import DB" onPress={importDatabase} />
+                <Button title="Get event data" onPress={getEventById} />
+                <TriggerBackgroundTask/>
 
             </ScrollView>
             <HabitCompletionModal />

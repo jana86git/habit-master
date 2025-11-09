@@ -74,13 +74,18 @@ async function processHabitAbsent(habit: Habit): Promise<void> {
         WHERE habit_id = '${habit.id}'
     `);
 
-    const completed = new Set(rows.map(r => r.log_date));
+
+    const completed = new Set(rows.map(r => r.log_date.split("T")[0]));
+
+    
 
     // ✅ Generate all expected dates
     const expectedDates = generateHabitDates(habit);
 
     // ✅ Find skipped dates
     const skippedDates = expectedDates.filter((d) => !completed.has(d));
+
+   
 
     if (skippedDates.length === 0) {
         console.log(`✅ No missed days for ${habit.habit_name}`);

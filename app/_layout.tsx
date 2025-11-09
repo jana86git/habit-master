@@ -1,6 +1,7 @@
 
 import CreateOptionPopup from '@/components/home_page_components/CreateOptionPopup';
 import AppWrapperProvider from '@/components/wrapper_layout/AppWrapperContext';
+import { requestNotificationPermissions } from '@/constants/notificationAndroid';
 import { initiateDB } from '@/db/db';
 import { Stack } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -12,7 +13,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     initiateDB();
-    
+    requestNotificationPermissions();
   }, [])
 
 

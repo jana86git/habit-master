@@ -56,7 +56,7 @@ export const pageConfigs: PageConfig[] = [
 
 export const footerItems = [
         { icon: Ionicons, iconName:"today-outline", title: 'Today', value:"/home", type:"redirect" },
-        { icon: Ionicons,iconName:"stats-chart-outline", title: 'Search', value:"/search",type:"redirect" },
+        { icon: Ionicons,iconName:"stats-chart-outline", title: 'Growth', value:"/growth",type:"redirect" },
         { icon: AntDesign ,iconName:"plus", title: 'Add', value: "/add",type:"event" },
         { icon: Entypo,iconName:"line-graph", title: 'Habits',value: "/habits",type:"redirect"  },
         { icon: Entypo,iconName:"notification", title: 'Tasks',value: "/tasks",type:"redirect"  }

@@ -5,12 +5,12 @@ import { colors } from "@/constants/colors";
 import { emitError } from "@/constants/emitError";
 import { emitHabitRefetch } from "@/constants/emitRefetch";
 import { emitSuccess } from "@/constants/emitSuccess";
+import { createRecurringEventAndroid, deleteReminder } from "@/constants/notificationAndroid";
 import { db } from "@/db/db";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Button, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-
 export default function EditHabit() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -37,7 +37,7 @@ function HabitLoader({ habitId }: { habitId: string }) {
       try {
         if (!db) return;
         const result: HabitResponse[] = await db.getAllAsync(`SELECT * FROM habits WHERE id = ?`, [habitId]);
-       
+
 
         if (result.length === 0) {
           emitError("Habit not found");
@@ -62,6 +62,7 @@ function HabitLoader({ habitId }: { habitId: string }) {
           targetValue: habit.target_value ?? null,
           targetUnit: habit.target_unit ?? null,
           category: habit.category ?? null,
+          reminder_event_id: habit.reminder_event_id ?? null
         };
 
         // Single dispatch �
@@ -122,8 +123,12 @@ function UpdateButton({ habitId }: { habitId: string }) {
       targetUnit,
       category,
       reminderTime,
+      reminder_event_id
     } = state;
 
+    let new_event_id = null;
+
+    // ✅ Validations
     if (!habitName?.trim()) {
       emitError("Please enter a habit name");
       return;
@@ -139,27 +144,97 @@ function UpdateButton({ habitId }: { habitId: string }) {
       return;
     }
 
+    // ✅ FIRST DELETE OLD REMINDER
+    if (reminder_event_id) {
+      try {
+        await deleteReminder(reminder_event_id);
+        console.log("Old event deleted:", reminder_event_id);
+      } catch (err) {
+        console.log("Error deleting event:", err);
+      }
+    }
+
+    // ✅ CREATE NEW REMINDER IF time is selected
+    if (reminderTime) {
+      const hour = reminderTime.getHours();
+      const minute = reminderTime.getMinutes();
+
+      let event_data;
+
+      // DAILY
+      if (frequency === "Daily") {
+        event_data = await createRecurringEventAndroid(
+          "Habit Reminder",
+          habitName,
+          hour,
+          minute,
+          { interval: "daily" },
+          endDate
+        );
+      }
+
+      // WEEKLY
+      else if (frequency === "Weekly") {
+        event_data = await createRecurringEventAndroid(
+          "Weekly Habit Reminder",
+          habitName,
+          hour,
+          minute,
+          { interval: "weekly" },
+          endDate
+        );
+      }
+
+      // EVERY N DAYS
+      else if (frequency === "Repeat_Every_N_Days") {
+        if (!nDaysFrequencyRate) {
+          emitError("Please enter the number of days");
+          return;
+        }
+
+        event_data = await createRecurringEventAndroid(
+          "Habit Reminder",
+          habitName,
+          hour,
+          minute,
+          { interval: nDaysFrequencyRate },
+          endDate
+        );
+      }
+
+      if (!event_data?.success) {
+        emitError(event_data?.message || "Failed to create reminder");
+        new_event_id = null;
+      } else {
+        new_event_id = event_data.eventId;
+        console.log("Created new reminder event:", new_event_id);
+      }
+    }
+
+    // ✅ UPDATE DATABASE
     const sql = `
-      UPDATE habits SET
-        habit_name = ?,
-        start_date = ?,
-        end_date = ?,
-        category = ?,
-        reminder = ?,
-        frequency = ?,
-        hourly_frequency_rate = ?,
-        n_days_frequency_rate = ?,
-        task_point = ?,
-        negative_task_point = ?,
-        evaluation_type = ?,
-        target_condition = ?,
-        target_value = ?,
-        target_unit = ?
-      WHERE id = ?;
-    `;
+    UPDATE habits SET
+      habit_name = ?,
+      start_date = ?,
+      end_date = ?,
+      category = ?,
+      reminder = ?,
+      frequency = ?,
+      hourly_frequency_rate = ?,
+      n_days_frequency_rate = ?,
+      task_point = ?,
+      negative_task_point = ?,
+      evaluation_type = ?,
+      target_condition = ?,
+      target_value = ?,
+      target_unit = ?,
+      reminder_event_id_android = ?
+    WHERE id = ?;
+  `;
 
     try {
       setLoading(true);
+
       await db.runAsync(sql, [
         habitName,
         startDate.toISOString(),
@@ -175,12 +250,13 @@ function UpdateButton({ habitId }: { habitId: string }) {
         targetCondition ?? null,
         targetValue ?? null,
         targetUnit ?? null,
+        new_event_id ?? null,
         habitId,
       ]);
 
       emitSuccess("Habit updated successfully");
       emitHabitRefetch();
-      router.back(); // optional navigation
+      router.back();
     } catch (error) {
       console.error("Update failed:", error);
       emitError("Failed to update habit");
@@ -188,6 +264,7 @@ function UpdateButton({ habitId }: { habitId: string }) {
       setLoading(false);
     }
   }
+
 
   return (
     <Button disabled={loading} title={loading ? "Updating..." : "Update"} onPress={updateHabit} />

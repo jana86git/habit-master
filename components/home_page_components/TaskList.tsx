@@ -31,26 +31,27 @@ export default function TaskList() {
 
             // 1️⃣ Fetch all tasks for the selected date
             const tasksQuery = `
-        SELECT 
-          id,
-          task_name,
-          category,
-          start_date,
-          end_date,
-          task_point,
-          negative_task_point
-        FROM tasks
-        WHERE 
-          (
-            -- Single-day tasks
-            (end_date IS NULL AND substr(start_date, 1, 10) = ?)
-            OR
-            -- Range tasks that include the given date
-            (end_date IS NOT NULL 
-              AND substr(start_date, 1, 10) <= ? 
-              AND substr(end_date, 1, 10) >= ?)
-          )
-        ORDER BY created_at DESC;
+     SELECT 
+  id,
+  task_name,
+  category,
+  start_date,
+  end_date,
+  task_point,
+  negative_task_point
+FROM tasks
+WHERE 
+  (
+    -- Tasks that started on or before today and have no end date
+    (substr(start_date, 1, 10) <= ? AND end_date IS NULL)
+    
+    OR
+    
+    -- Tasks that have both start and end dates and are active today
+    (substr(start_date, 1, 10) <= ? AND substr(end_date, 1, 10) >= ?)
+  )
+ORDER BY datetime(created_at) DESC;
+
       `;
 
             const tasksRaw = await db.getAllAsync(tasksQuery, [dateStr, dateStr, dateStr]);
@@ -130,10 +131,13 @@ export default function TaskList() {
         if (!db || !task) return;
 
         const today = new Date();
-        const startDate = new Date(task.start_date);
-        const endDate = task.end_date ? new Date(task.end_date) : null;
+        today.setHours(0, 0, 0, 0);
 
-        if (startDate > today || (endDate && endDate < today)) return;
+        const startDate = new Date(task.start_date);
+        startDate.setHours(0, 0, 0, 0);
+
+        const endDate = task.end_date ? new Date(task.end_date) : null;
+        if (endDate) endDate.setHours(0, 0, 0, 0);
 
         let points = 0;
         if (endDate && endDate < today) {
@@ -142,22 +146,29 @@ export default function TaskList() {
             points += task.task_point;
         }
 
+
+
         const current = completionMap.get(task.id);
         const newStatus = !current?.completed;
 
-        // Update local state immediately
-        setCompletionMap(
-            (prev) => new Map(prev).set(task.id, { completed: newStatus, point: task.task_point })
-        );
+
 
         try {
             if (newStatus) {
+                // Update local state immediately
+                setCompletionMap(
+                    (prev) => new Map(prev).set(task.id, { completed: newStatus, point: points })
+                );
                 await db.runAsync(
                     `INSERT INTO completions (id, task_id, log_date, point)
            VALUES (?, ?, ?, ?);`,
                     [uuid.v4().toString(), task.id, new Date().toISOString(), points]
                 );
             } else {
+                // Update local state immediately
+                setCompletionMap(
+                    (prev) => new Map(prev).set(task.id, { completed: newStatus, point: 0 })
+                )
                 await db.runAsync(`DELETE FROM completions WHERE task_id = ?;`, [task.id]);
             }
         } catch (error) {

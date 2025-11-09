@@ -12,7 +12,8 @@ export interface InitialState {
     taskPoint: number;
     negativeTaskPoint: number;
     category:string | null;
-    subtasks: Subtask[]
+    subtasks: Subtask[];
+    reminder_event_id: string | null;
 }
 
 
@@ -49,6 +50,7 @@ export type TaskResponse = {
   task_point: number;
   negative_task_point: number;
   created_at: string; // timestamp string
+  reminder_event_id: string | null
 };
 
 export type Action =

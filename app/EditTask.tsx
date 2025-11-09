@@ -5,6 +5,7 @@ import { colors } from "@/constants/colors";
 import { emitError } from "@/constants/emitError";
 import { emitTasksRefetch } from "@/constants/emitRefetch";
 import { emitSuccess } from "@/constants/emitSuccess";
+import { createOneTimeReminder, deleteReminder } from "@/constants/notificationAndroid";
 import { db } from "@/db/db";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -63,6 +64,7 @@ function InitiateEditData() {
           negativeTaskPoint: taskData.negative_task_point,
           category: taskData.category,
           subtasks: subtasks || [],
+          reminder_event_id: taskData?.reminder_event_id || null
         };
 
         dispatch({ type: "INITIATE_EDIT_TASK_DATA", payload: formattedData });
@@ -73,9 +75,9 @@ function InitiateEditData() {
     }
 
     async function fetchSubtasksData(task_id: string): Promise<Subtask[]> {
-        
+
       try {
-        if(!db) return [];
+        if (!db) return [];
         const query = `SELECT * FROM subtasks WHERE task_id = ?`;
         const subtasksData: Subtask[] = await db.getAllAsync(query, [task_id]);
         return subtasksData;
@@ -95,7 +97,7 @@ function InitiateEditData() {
  * ✅ Handles updating the edited task
  */
 function SubmitButton() {
-  const { state } = useTaskForm();
+  const { state, dispatch } = useTaskForm();
   const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
 
@@ -110,7 +112,11 @@ function SubmitButton() {
       negativeTaskPoint,
       category,
       subtasks,
+      reminder_event_id
     } = state;
+
+    const taskId = id as string;
+    let reminder_event_id_android = null;
 
     // ✅ Validations
     if (!taskName?.trim()) {
@@ -130,6 +136,11 @@ function SubmitButton() {
       return;
     }
 
+    if (!endDate) {
+      emitError("Please select an end date");
+      return;
+    }
+
     if (endDate && new Date(endDate) < start) {
       emitError("End date cannot be before start date");
       return;
@@ -145,6 +156,8 @@ function SubmitButton() {
       return;
     }
 
+
+
     // ✅ Subtasks validation
     for (const [index, subtask] of subtasks.entries()) {
       if (!subtask.name.trim()) {
@@ -157,6 +170,43 @@ function SubmitButton() {
       }
     }
 
+    if (reminderTime) {
+
+      if(reminder_event_id){
+        await deleteReminder(reminder_event_id);
+      }
+      
+
+      // Build final reminder date = endDate + reminderTime
+      const finalNotificationDate = new Date(endDate);
+      finalNotificationDate.setHours(reminderTime.getHours());
+      finalNotificationDate.setMinutes(reminderTime.getMinutes());
+      finalNotificationDate.setSeconds(0);
+      console.log("Final notification date: ", finalNotificationDate);
+      console.log("Reminder time: ", reminderTime, reminderTime.getHours(), reminderTime.getMinutes());
+
+      // Schedule notification
+      const event_data = await createOneTimeReminder(
+       "Task Reminder:",
+        taskName,
+        finalNotificationDate
+      );
+
+      // ✅ FAILURE → Remove reminder, continue with task creation
+      if (!event_data.success) {
+        emitError(event_data.message as string);
+
+        dispatch({
+          type: "SET_REMINDER_TIME",
+          payload: null,
+        });
+
+      } else {
+        // ✅ SUCCESS → store ID in global variable
+        reminder_event_id_android = event_data.eventId
+      }
+    }
+
     try {
       setLoading(true);
 
@@ -164,7 +214,7 @@ function SubmitButton() {
       const updateTaskSQL = `
         UPDATE tasks
         SET task_name = ?, start_date = ?, end_date = ?, reminder = ?, 
-            task_point = ?, negative_task_point = ?, category = ?
+            task_point = ?, negative_task_point = ?, category = ?, reminder_event_id_android = ?
         WHERE id = ?;
       `;
 
@@ -176,6 +226,7 @@ function SubmitButton() {
         taskPoint,
         negativeTaskPoint,
         category,
+        reminder_event_id_android || null,
         id as string,
       ]);
 

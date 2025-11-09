@@ -5,6 +5,7 @@ import { colors } from "@/constants/colors"
 import { emitError } from "@/constants/emitError"
 import { emitTasksRefetch } from "@/constants/emitRefetch"
 import { emitSuccess } from "@/constants/emitSuccess"
+import { createOneTimeReminder } from "@/constants/notificationAndroid"
 import { db } from "@/db/db"
 import { useState } from "react"
 import { Button, View } from "react-native"
@@ -37,7 +38,7 @@ function SubmitButton() {
     const [loading, setLoading] = useState(false);
 
     async function createTask() {
-        if(!db) return;
+        if (!db) return;
         const {
             taskName,
             startDate,
@@ -48,6 +49,9 @@ function SubmitButton() {
             category,
             subtasks,
         } = state;
+
+        const taskId = uuid.v4().toString();
+        let reminder_id = null;
 
         // 🧩 Basic Validations
         if (!taskName?.trim()) {
@@ -65,6 +69,11 @@ function SubmitButton() {
 
         if (start.setHours(0, 0, 0, 0) < today.setHours(0, 0, 0, 0)) {
             emitError("Start date cannot be in the past");
+            return;
+        }
+
+        if (!endDate) {
+            emitError("Please select an end date");
             return;
         }
 
@@ -89,7 +98,7 @@ function SubmitButton() {
         // ✅ Subtasks validation
         for (const [index, subtask] of subtasks.entries()) {
             if (!subtask.name.trim()) {
-               emitError( `Subtask #${index + 1} is missing a name`);
+                emitError(`Subtask #${index + 1} is missing a name`);
                 return;
             }
             if (isNaN(subtask.point) || subtask.point < 0) {
@@ -106,15 +115,47 @@ function SubmitButton() {
             return;
         }
 
+
+
+        if (reminderTime) {
+
+            // Build final reminder date = endDate + reminderTime
+            const finalNotificationDate = new Date(endDate);
+            finalNotificationDate.setHours(reminderTime.getHours());
+            finalNotificationDate.setMinutes(reminderTime.getMinutes());
+            finalNotificationDate.setSeconds(0);
+
+            // Schedule notification
+            const event_data = await createOneTimeReminder(
+                "Task Reminder:",
+                taskName,
+               finalNotificationDate
+            );
+
+            // ✅ FAILURE → Remove reminder, continue with task creation
+            if (!event_data.success) {
+                emitError(event_data?.message as string);
+
+                dispatch({
+                    type: "SET_REMINDER_TIME",
+                    payload: null,
+                });
+
+            } else {
+                // ✅ SUCCESS → store ID in global variable
+                reminder_id = event_data.eventId
+            }
+        }
+
         try {
-            const taskId = uuid.v4().toString();
+
 
             // 🧠 Insert main task
             const insertTaskSQL = `
       INSERT INTO tasks (
         id, task_name, start_date, end_date, reminder,
-        task_point, negative_task_point, category
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        task_point, negative_task_point, category, reminder_event_id_android
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
             await db.runAsync(insertTaskSQL, [
@@ -126,11 +167,12 @@ function SubmitButton() {
                 taskPoint,
                 negativeTaskPoint,
                 category,
+                reminder_id ? reminder_id : null
             ]);
 
             // 🧠 Insert subtasks (if any)
             if (subtasks.length > 0) {
-           
+
                 const insertSubtaskSQL = `
         INSERT INTO subtasks (id, task_id, name, point)
         VALUES (?, ?, ?, ?);
