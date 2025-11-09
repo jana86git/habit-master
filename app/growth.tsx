@@ -1,195 +1,258 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { colors } from "@/constants/colors";
+import { db } from "@/db/db";
+import React, { useEffect, useState } from "react";
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 
+interface CompletionGroup {
+    value: number;
+    label: string;
+    dataPointText: string;
+}
+
+interface DBRow {
+    group_id: number;
+    totalValue: number;
+    startLabel: string;
+    endLabel: string;
+}
+
 export default function RewardChart() {
-    // � Example input data
-    const rawData = [
-        { day_1: -1 },
-        { day_1: 22 },
-        { day_2: -2 },
-        { day_2: 4 },
-        { day_2: 12 },
-        { day_2: -9 },
-        { day_3: 5 },
-        { day_3: -3 },
-        { day_3: 7 },
-        { day_4: 8 },
-        { day_4: 10 },
-        { day_4: -5 },
-        { day_4: 25 },
-        { day_5: 12 },
-        { day_5: -7 },
-        { day_5: 15 },
-        { day_5: 20 },
-        { day_6: 9 },
-        { day_6: -8 },
-        { day_6: 14 },
-        { day_6: 11 },
-        { day_7: -2 },
-        { day_7: 16 },
-        { day_7: 5 },
-        { day_8: -3 },
-        { day_8: 19 },
-        { day_8: 6 },
-        { day_8: 17 },
-        { day_9: 2 },
-        { day_9: 28 },
-        { day_9: -6 },
-        { day_9: 9 },
-        { day_10: -4 },
-        { day_10: 18 },
-        { day_10: 3 },
-        { day_11: 10 },
-        { day_11: -9 },
-        { day_11: 26 },
-        { day_11: 7 },
-        { day_12: 15 },
-        { day_12: -8 },
-        { day_12: 30 },
-        { day_12: 12 },
-        { day_13: -1 },
-        { day_13: 20 },
-        { day_13: 5 },
-        { day_13: 14 },
-        { day_14: 2 },
-        { day_14: -5 },
-        { day_14: 17 },
-        { day_14: 22 },
-        { day_15: 4 },
-        { day_15: -3 },
-        { day_15: 18 },
-        { day_15: 7 },
-        { day_16: -10 },
-        { day_16: 13 },
-        { day_16: 9 },
-        { day_16: 25 },
-        { day_17: -7 },
-        { day_17: 16 },
-        { day_17: 8 },
-        { day_17: 12 },
-        { day_18: 6 },
-        { day_18: -4 },
-        { day_18: 24 },
-        { day_18: 10 },
-        { day_19: -2 },
-        { day_19: 15 },
-        { day_19: 5 },
-        { day_19: 21 },
-        { day_20: -3 },
-        { day_20: 8 },
-        { day_20: 19 },
-        { day_20: 7 },
-        { day_21: 2 },
-        { day_21: -6 },
-        { day_21: 20 },
-        { day_21: 13 },
-        { day_22: -5 },
-        { day_22: 11 },
-        { day_22: 17 },
-        { day_22: 9 },
-        { day_23: 4 },
-        { day_23: -8 },
-        { day_23: 23 },
-        { day_23: 6 },
-        { day_24: -9 },
-        { day_24: 10 },
-        { day_24: 18 },
-        { day_24: 7 },
-        { day_25: -4 },
-        { day_25: 16 },
-        { day_25: 12 },
-        { day_25: 8 },
-        { day_25: 21 },
-    ];
+    const [groupedData, setGroupedData] = useState<CompletionGroup[]>([]);
+    const [roundedMax, setRoundedMax] = useState(0);
+    const [roundedMin, setRoundedMin] = useState(0);
 
-    // ⚙️ Step 1: Aggregate daily totals (O(n))
-    const acc = Object.create(null);
-    for (let i = 0; i < rawData.length; i++) {
-        const item = rawData[i];
-        for (const key in item) {
-            acc[key] = (acc[key] || 0) + item[key];
+    // ✅ FILTER STATE
+    const [filter, setFilter] = useState<"today" | "last_7_days" | "last_month" | "last_365_days" | "all">("all");
+
+    const width = Dimensions.get("window").width;
+    const height = Dimensions.get("window").height;
+    const totalGroups = 20;
+
+    // ✅ FORMAT DATE (YYYY-MM-DD)
+    const format = (d: Date) => d.toISOString().split("T")[0];
+
+    // ✅ DETERMINE DATE RANGE BASED ON FILTER
+    const getFilterSQL = () => {
+        const today = new Date();
+        let start: string | null = null;
+
+        if (filter === "today") {
+            start = format(today);
+        } else if (filter === "last_7_days") {
+            const d = new Date();
+            d.setDate(d.getDate() - 7);
+            start = format(d);
+        } else if (filter === "last_month") {
+            const d = new Date();
+            d.setMonth(d.getMonth() - 1);
+            start = format(d);
+        } else if (filter === "last_365_days") {
+            const d = new Date();
+            d.setDate(d.getDate() - 365);
+            start = format(d);
         }
-    }
 
-    // ⚙️ Step 2: Convert to chart-friendly format
-    const transformedData = Object.entries(acc)
-        .map(([key, value]) => {
-            const dayNum = parseInt(key.split("_")[1]);
-            return {
-                value,
-                label: `D${dayNum}`,
-                dataPointText: value.toString(),
-            };
-        })
-        .sort((a, b) => parseInt(a.label.slice(1)) - parseInt(b.label.slice(1)));
+        // all → no WHERE clause
+        if (!start) return { where: "", params: [] };
 
-    // ⚙️ Step 3: Group into up to 5 total points (adaptive, safe)
-    const totalGroups = 5;
-    let groupedData = [];
+        return {
+            where: "WHERE DATE(log_date) >= DATE(?)",
+            params: [start],
+        };
+    };
 
-    if (transformedData.length <= totalGroups) {
-        // If less data, use as-is (no grouping)
-        groupedData = transformedData;
-    } else {
-        const groupSize = Math.ceil(transformedData.length / totalGroups);
-        for (let i = 0; i < transformedData.length; i += groupSize) {
-            const chunk = transformedData.slice(i, i + groupSize);
-            const totalValue = chunk.reduce((sum, d) => sum + d.value, 0);
-            const startLabel = chunk[0].label;
-            const endLabel = chunk[chunk.length - 1].label;
+    async function fetchCompletions() {
+        try {
+            if (!db) return;
 
-            groupedData.push({
-                value: totalValue,
-                label: `${startLabel}-${endLabel}`,
-                dataPointText: totalValue.toString(),
+            // ✅ BUILD FILTER SQL
+            const { where, params } = getFilterSQL();
+
+            // ✅ COUNT BASED ON FILTER
+            const count = await db.getFirstAsync<{ total: number }>(
+                `SELECT COUNT(*) as total FROM completions ${where}`,
+                params
+            );
+
+            console.log("COUNT: ", count);
+
+            const totalRows = count.total ?? 0;
+            if (totalRows === 0) {
+                setGroupedData([]);
+                return;
+            }
+
+            const groupSize = Math.ceil(totalRows / totalGroups);
+
+            // ✅ 2. Fetch grouped data (FILTER APPLIED)
+            const rows = await db.getAllAsync<DBRow>(
+                `
+                SELECT 
+                    group_id,
+                    SUM(point) AS totalValue,
+                    MIN(log_date) AS startLabel,
+                    MAX(log_date) AS endLabel
+                FROM (
+                    SELECT 
+                        *,
+                        CAST((ROW_NUMBER() OVER (ORDER BY log_date) - 1) / ? AS INTEGER) AS group_id
+                    FROM completions
+                    ${where}
+                )
+                GROUP BY group_id
+                ORDER BY group_id;
+                `,
+                [groupSize, ...params]
+            );
+
+            let value = 0;
+
+            // ✅ Create chart points
+            const formatted = rows.map((r) => {
+                value += r.totalValue;
+
+                return {
+                    value: Math.ceil(value),
+                    label: r.startLabel.split("T")[0],
+                    dataPointText: Math.ceil(value).toString(),
+                };
             });
+
+            // ✅ PADDING LOGIC (unchanged)
+            const lastDate = new Date(rows[rows.length - 1].endLabel);
+            const today = new Date();
+            const diffDays = Math.max(
+                0,
+                Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
+            );
+
+            for (let i = 1; i <= diffDays; i++) {
+                const d = new Date(lastDate);
+                d.setDate(lastDate.getDate() + i);
+
+                formatted.push({
+                    value,
+                    label: d.toISOString().split("T")[0],
+                    dataPointText: String(Math.ceil(value)),
+                });
+            }
+
+            console.log("Formatted data: ", formatted)
+
+            setGroupedData(formatted);
+
+            const values = formatted.map((d) => Math.round(d.value));
+            const maxVal = Math.max(...values);
+            const minVal = Math.min(...values);
+
+            console.log(maxVal, minVal)
+
+          
+
+            if (minVal < 0) {
+                const maxAbsolute = Math.max(Math.abs(maxVal), Math.abs(minVal));
+               
+
+               
+
+                setRoundedMax(maxAbsolute);
+                setRoundedMin(-maxAbsolute);
+            } else {
+                setRoundedMax(Math.ceil(maxVal / stepSize) * stepSize);
+                setRoundedMin(0);
+            }
+        } catch (error) {
+            console.error("Error fetching grouped completions:", error);
         }
     }
 
-    // ⚙️ Step 4: Render chart
+    // ✅ REFRESH ON FILTER CHANGE
+    useEffect(() => {
+        fetchCompletions();
+    }, [filter]);
+
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Reward Points Summary (5-Point View)</Text>
-            <LineChart
-                data={groupedData}
-                width={320}
-                height={250}
-                spacing={60}
-                color="#FF3B30"
-                thickness={3}
-                startFillColor="rgba(255, 59, 48, 0.3)"
-                endFillColor="rgba(255, 59, 48, 0.01)"
-                startOpacity={0.9}
-                endOpacity={0.2}
-                initialSpacing={20}
-                noOfSections={5}
-                yAxisColor="black"
-                yAxisThickness={1}
-                rulesType="solid"
-                rulesColor="gray"
-                yAxisTextStyle={{ color: "black" }}
-                xAxisColor="black"
-                xAxisThickness={1}
-                xAxisLabelTextStyle={{ color: "black", fontSize: 10 }}
-                dataPointsColor="#FF3B30"
-                dataPointsRadius={5}
-                textColor="black"
-                textFontSize={10}
-                textShiftY={-8}
-                textShiftX={-5}
-                areaChart
-                curved
-            />
-        </View>
+        <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+            <View style={styles.container}>
+                <Text style={styles.title}>Growth Map</Text>
+
+                {/* ✅ FILTER GRID */}
+                <View style={styles.filterGrid}>
+                    {["today", "last_7_days", "last_month", "last_365_days", "all"].map((f) => (
+                        <TouchableOpacity
+                            key={f}
+                            style={[
+                                styles.filterItem,
+                                filter === f && styles.filterItemActive
+                            ]}
+                            onPress={() => setFilter(f as any)}
+                        >
+                            <Text
+                                style={{
+                                    color: filter === f ? "white" : "black",
+                                    fontWeight: "600",
+                                }}
+                            >
+                                {f.replace(/_/g, " ")}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {groupedData.length > 0 ? (
+                    <LineChart
+                        data={groupedData}
+                        width={(width * 90) / 100}
+                        height={roundedMin < 0 ? 100 : 300}
+                        spacing={Math.round((width - 40) / totalGroups)}
+                        color="#FF3B30"
+                        hideYAxisText
+                        thickness={3}
+                        startFillColor="rgba(255, 59, 48, 0.3)"
+                        endFillColor="rgba(255, 59, 48, 0.01)"
+                        startOpacity={0.9}
+                        endOpacity={0.2}
+                        initialSpacing={0}
+                        maxValue={roundedMax}
+                        mostNegativeValue={roundedMin}
+                        yAxisColor="#ccc"
+                        yAxisThickness={1}
+                        yAxisOffset={2}
+                        hideRules
+                        thickness1={1}
+                        rulesType="dashed"
+                        rulesColor="#ccc"
+                        yAxisTextStyle={{ color: colors.text }}
+                        xAxisColor="#ccc"
+                        xAxisThickness={1}
+                        xAxisLabelTextStyle={{ color: colors.text, fontSize: 14, display: "none" }}
+                        dataPointsColor="#FF3B30"
+                        xAxisTextNumberOfLines={3}
+                        dataPointsRadius={1}
+                        textColor={colors.text}
+                        textFontSize={8}
+                        areaChart
+                        curved
+                    />
+                ) : (
+                    <Text style={{ color: "gray", marginTop: 20 }}>
+                        No completion data available.
+                    </Text>
+                )}
+
+                <Text>
+                    {groupedData[0]?.label} - {groupedData[groupedData.length - 1]?.label}
+                </Text>
+            </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 10,
-        backgroundColor: "white",
+        backgroundColor: colors.background2,
         justifyContent: "center",
         alignItems: "center",
     },
@@ -198,5 +261,25 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginBottom: 20,
         color: "black",
+    },
+
+    // ✅ FILTER GRID
+    filterGrid: {
+        width: "90%",
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+        marginBottom: 15,
+    },
+    filterItem: {
+        width: "48%",
+        padding: 10,
+        marginVertical: 5,
+        backgroundColor: "#eee",
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    filterItemActive: {
+        backgroundColor: "#FF3B30",
     },
 });
