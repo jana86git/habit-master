@@ -25,6 +25,7 @@ import { styles } from './styles';
 import { Toast } from './Toast';
 import { IconItem } from './types';
 
+import Button3D from '@/components/button_3d/Button3D';
 import { eventEmitter } from '@/constants/eventEmitter';
 
 
@@ -69,9 +70,9 @@ export function AppWrapperComponent({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (pathName) {
-            
+
             const pageConfig = pageConfigs?.find((config) => config.page === pathName)
-        
+
             if (pageConfig) {
                 dispatch({ type: "SET_PAGE_CONFIG", payload: pageConfig })
                 dispatch({ type: "SET_ACTIVE_PAGE", payload: pageConfig?.page })
@@ -79,27 +80,27 @@ export function AppWrapperComponent({ children }: { children: ReactNode }) {
         }
     }, [pathName])
 
-   useEffect(() => {
-    const handleError = (event: any) => {
-        if (event?.error) {
-            dispatch({ type: "SET_ERRORS", payload: [...state.errors, event.error || ""] });
-        }
-    };
+    useEffect(() => {
+        const handleError = (event: any) => {
+            if (event?.error) {
+                dispatch({ type: "SET_ERRORS", payload: [...state.errors, event.error || ""] });
+            }
+        };
 
-    const handleSuccess = (event: any) => {
-        if (event?.success) {
-            dispatch({ type: "SET_SUCCESSES", payload: [...state.successes, event.success || ""] });
-        }
-    };
+        const handleSuccess = (event: any) => {
+            if (event?.success) {
+                dispatch({ type: "SET_SUCCESSES", payload: [...state.successes, event.success || ""] });
+            }
+        };
 
-    eventEmitter.on('errorEvent', handleError);
-    eventEmitter.on('successEvent', handleSuccess);
+        eventEmitter.on('errorEvent', handleError);
+        eventEmitter.on('successEvent', handleSuccess);
 
-    return () => {
-        eventEmitter.off('errorEvent', handleError);
-        eventEmitter.off('successEvent', handleSuccess);
-    };
-}, [state.errors, state.successes]);
+        return () => {
+            eventEmitter.off('errorEvent', handleError);
+            eventEmitter.off('successEvent', handleSuccess);
+        };
+    }, [state.errors, state.successes]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -109,11 +110,11 @@ export function AppWrapperComponent({ children }: { children: ReactNode }) {
                 currentPageConfig?.headerType === "default" ?
                     <View style={styles.header}>
                         <View style={{ flexDirection: "row" }}>
-                            <TouchableOpacity onPress={onMenuPress} style={styles.iconButton}>
+                            <Button3D onClick={onMenuPress} >
                                 <View style={styles.hamburger}>
-                                    <AntDesign name="menu" size={24} color={colors.text} />
+                                    <AntDesign name="menu" size={20} color={colors.textOnPrimary} />
                                 </View>
-                            </TouchableOpacity>
+                            </Button3D>
                             <Text style={styles.appName}>{appName}</Text>
                         </View>
                         <View>
@@ -143,10 +144,12 @@ export function AppWrapperComponent({ children }: { children: ReactNode }) {
                     {footerItems.map((item, index) => {
                         const IconCompnent = item.icon
                         return (
-                            <TouchableOpacity onPress={() => { handleIconClick(item as IconItem) }} key={index} style={styles.footerItem}>
-                                <IconCompnent name={item.iconName as any} size={24} color={colors.text} />
-                                <Text style={styles.footerTitle}>{item.title}</Text>
-                            </TouchableOpacity>
+                            <Button3D active={pathName === item.value} onClick={() => { handleIconClick(item as IconItem) }} key={index}>
+                                <View style={styles.footerItem}>
+                                    <IconCompnent name={item.iconName as any} size={18} color={colors.textOnPrimary} />
+                                    <Text style={[styles.footerTitle, { color: colors.textOnPrimary, fontWeight: "bold" }]}>{item.title}</Text>
+                                </View>
+                            </Button3D>
                         )
                     })}
                 </View> : null

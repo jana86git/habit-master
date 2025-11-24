@@ -1,11 +1,12 @@
 export type Action =
     | { type: "SHOW_CREATE_OPTION", payload: boolean }
     | { type: "SHOW_ANY", payload: string }
-    | {type:"SET_SELECTED_CREATE_OPTION", payload: string}
-    | {type:"SET_SELECTED_DATE", payload: Date}
-    | {type:"SET_HABIT_COMPLETION_DETAILS", payload: HabitRecord | null}
-    | {type:"SET_HABIT_COMPLETION_MAP", payload:  Map<string, CompletionStatus>}
-    
+    | { type: "SET_SELECTED_CREATE_OPTION", payload: string }
+    | { type: "SET_SELECTED_DATE", payload: Date }
+    | { type: "SET_HABIT_COMPLETION_DETAILS", payload: HabitRecord | null }
+    | { type: "SET_HABIT_COMPLETION_MAP", payload: Map<string, CompletionStatus> }
+    | { type: "SET_ACTIVE_TAB", payload: "tasks" | "habits" }
+
 export type HabitRecord = {
     id: string;
     habit_name: string;

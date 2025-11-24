@@ -7,7 +7,8 @@ export const initialState: InitialState = {
     taskPoint:5,
     negativeTaskPoint:3,
     category: null,
-    subtasks: []
+    subtasks: [],
+    reminder_event_id: null
 }
 export function reducer(state: InitialState, action: Action): InitialState {
   switch (action.type) {

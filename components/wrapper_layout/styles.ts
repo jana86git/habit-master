@@ -13,8 +13,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 8,
         backgroundColor: colors.background,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.subtle,
+
         elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -33,9 +32,11 @@ export const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     hamburger: {
-        width: 24,
-        height: 18,
-        justifyContent: 'space-between',
+        width: 36,
+        height: 36,
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     hamburgerLine: {
         width: '100%',
@@ -54,9 +55,9 @@ export const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: colors.text,
         textAlign: 'center',
-        alignSelf:"center",
-        marginLeft:10
-       
+        alignSelf: "center",
+        marginLeft: 10
+
     },
     content: {
         flex: 1,
@@ -71,8 +72,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-around',
         backgroundColor: colors.background,
-        borderTopWidth: 1,
-        borderTopColor: colors.subtle,
+
         elevation: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -2 },
@@ -83,6 +83,9 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
+        width: 50,
+        height: 45
+
     },
     footerIcon: {
         fontSize: 24,
@@ -127,19 +130,19 @@ export const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: colors.subtle,
     },
-    menuText:{
+    menuText: {
         fontSize: 16,
-        color:colors.text
+        color: colors.text
     },
     toastContainer: {
-    position: 'absolute',
-    top: 40,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    padding: 8,
-    gap: 8, // Space between toasts
-    height:"auto",
-    
-  },
+        position: 'absolute',
+        top: 40,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        padding: 8,
+        gap: 8, // Space between toasts
+        height: "auto",
+
+    },
 });

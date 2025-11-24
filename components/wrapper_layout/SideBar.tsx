@@ -1,6 +1,7 @@
 import { styles } from "./styles";
 
 import { colors } from "@/constants/colors";
+import { exportDatabase, importDatabase } from "@/db/db";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useEffect, useState } from "react";
 import {
@@ -50,6 +51,14 @@ export default function Sidebar() {
         });
     };
 
+    const handleExportDatabase = async () => {
+        await exportDatabase();
+    };
+
+    const handleImportDatabase = async () => {
+        await importDatabase();
+    };
+
     useEffect(() => {
         if (sidebarVisibility) {
             openSidebar();
@@ -90,6 +99,12 @@ export default function Sidebar() {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles?.menuTextsWrapper}>
                     <Text style={styles?.menuText}>About</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles?.menuTextsWrapper} onPress={handleExportDatabase}>
+                    <Text style={styles?.menuText}>Export Database</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles?.menuTextsWrapper} onPress={handleImportDatabase}>
+                    <Text style={styles?.menuText}>Import Database</Text>
                 </TouchableOpacity>
             </View>
         </Animated.View>

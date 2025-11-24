@@ -13,7 +13,8 @@ export const initialState: InitialState = {
   targetCondition: "At_Least",
   targetValue: 10,
   targetUnit: null,
-  category: null
+  category: null,
+  reminder_event_id: null
 }
 
 export function reducer(state: InitialState, action: Action): InitialState {

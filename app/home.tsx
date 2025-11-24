@@ -1,15 +1,15 @@
 
+import Button3D from "@/components/button_3d/Button3D";
 import HabitList, { HabitCompletionModal } from "@/components/home_page_components/HabitList";
 import { initialState, InitialState, reducer } from "@/components/home_page_components/reducer";
+import { styles } from "@/components/home_page_components/styles";
 import TaskList from "@/components/home_page_components/TaskList";
 import { Action } from "@/components/home_page_components/types";
-import TriggerBackgroundTask from "@/components/others/TriggerBackgroundTask";
-import { getEventById } from "@/constants/calenderAndroid";
+import WindowScrollview from "@/components/window_scrollview/WindowScrollview";
 import { colors } from "@/constants/colors";
 import { eventEmitter } from "@/constants/eventEmitter";
-import { exportDatabase, importDatabase } from "@/db/db";
 import { createContext, Dispatch, useContext, useEffect, useMemo, useReducer } from "react";
-import { Button, ScrollView, View } from "react-native";
+import { Text, View } from "react-native";
 interface HOME_PAGE_CONTEXT_TYPE {
     state: InitialState,
     dispatch: Dispatch<Action>;
@@ -73,17 +73,36 @@ export default function Home() {
 
     return (
         <View style={{ flex: 1 }}>
-            <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+            {/* Tab Navigation */}
+            <View style={styles.tabContainer}>
+                <Button3D style={{ flex: 1 }} active={state.activeTab === 'tasks'} onClick={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "tasks" })}>
+                    <View style={{ padding: 10 }}>
+                        <Text style={{ color: colors.textOnPrimary, fontSize: 16, fontWeight: "bold" }}>Task</Text>
+                    </View>
+                </Button3D>
+                <Button3D style={{ flex: 1 }} active={state.activeTab === 'habits'} onClick={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "habits" })}>
+                    <View style={{ padding: 10 }}>
+                        <Text style={{ color: colors.textOnPrimary, fontSize: 16, fontWeight: "bold" }}>Habit</Text>
+                    </View>
+                </Button3D>
 
-                <TaskList />
-                <HabitList />
+            </View>
+            <WindowScrollview>
 
-                <Button title="Export DB" onPress={exportDatabase} />
-                <Button title="Import DB" onPress={importDatabase} />
-                <Button title="Get event data" onPress={getEventById} />
-                <TriggerBackgroundTask/>
 
-            </ScrollView>
+
+                {/* Tab Content */}
+                {state.activeTab === 'tasks' ? (
+                    <TaskList />
+                ) : (
+                    <HabitList />
+                )}
+
+
+                <Button3D onClick={() => { }}>hello world</Button3D>
+
+
+            </WindowScrollview>
             <HabitCompletionModal />
         </View>
     )

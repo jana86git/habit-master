@@ -3,18 +3,19 @@ import { colors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
+import Button3D from "../button_3d/Button3D";
 export default function DateRangePicker() {
 
   const [showPicker, setShowPicker] = useState(false);
-  const {state, dispatch} = useHome();
-  const {selectedDate} = state;
+  const { state, dispatch } = useHome();
+  const { selectedDate } = state;
 
   const onChange = (event: any, selectedDate?: Date) => {
     setShowPicker(Platform.OS === "ios");
     if (selectedDate) {
-      
-      dispatch({type:"SET_SELECTED_DATE", payload: selectedDate})      
+
+      dispatch({ type: "SET_SELECTED_DATE", payload: selectedDate })
     }
   };
 
@@ -27,10 +28,13 @@ export default function DateRangePicker() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => setShowPicker(true)} style={styles.dateButton}>
-        <Ionicons name="calendar-outline" size={20} color={colors.subtle} />
-        <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
-      </TouchableOpacity>
+      <Button3D onClick={() => setShowPicker(true)}>
+        <View style={styles.dateButton}>
+          <Ionicons name="calendar-outline" size={20} color={colors.textOnPrimary} />
+          <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
+        </View>
+      </Button3D>
+
 
       {showPicker && (
         <DateTimePicker
@@ -57,6 +61,7 @@ const styles = StyleSheet.create({
   dateText: {
     marginLeft: 8,
     fontSize: 16,
-    color: colors.text,
+    color: colors.textOnPrimary,
+    fontWeight: "bold",
   },
 });
