@@ -10,6 +10,8 @@ export const initialState = {
     habitCompletionDetails: null as HabitRecord | null,
     completionMap: new Map() as Map<string, CompletionStatus>,
     activeTab: "habits" as "tasks" | "habits",
+    taskCount: 0,
+    habitCount: 0,
 }
 
 export type InitialState = typeof initialState
@@ -28,6 +30,10 @@ export function reducer(state: InitialState, action: Action): InitialState {
             return { ...state, completionMap: action.payload };
         case "SET_ACTIVE_TAB":
             return { ...state, activeTab: action.payload };
+        case "SET_TASK_COUNT":
+            return { ...state, taskCount: action.payload };
+        case "SET_HABIT_COUNT":
+            return { ...state, habitCount: action.payload };
         default:
             return state;
     }

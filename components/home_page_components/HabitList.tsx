@@ -1,6 +1,7 @@
 import { useHome } from "@/app/home";
 import { colors } from "@/constants/colors";
 import { eventEmitter } from '@/constants/eventEmitter';
+import { getFontFamily } from "@/constants/fonts";
 import { db } from "@/db/db";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
@@ -10,22 +11,64 @@ import { ModalView } from "../modal/Modal";
 import TextInputComponent from "../text_input/TextInput";
 import { HabitRecord } from "./types";
 
+/** 📅 Convert ISO date string to human-readable format */
+const formatHumanDate = (dateStr: string | null): string => {
+    if (!dateStr) return "No end date";
+
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Reset time for comparison
+    today.setHours(0, 0, 0, 0);
+    tomorrow.setHours(0, 0, 0, 0);
+    yesterday.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+
+    if (date.getTime() === today.getTime()) return "Today";
+    if (date.getTime() === tomorrow.getTime()) return "Tomorrow";
+    if (date.getTime() === yesterday.getTime()) return "Yesterday";
+
+    // Format as "Jan 15, 2025"
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+};
+
+/** 🎨 Get category icon based on category name */
+const getCategoryIcon = (category: string | null): keyof typeof Ionicons.glyphMap => {
+    if (!category) return "pricetag-outline";
+
+    const categoryLower = category.toLowerCase();
+    if (categoryLower.includes("work")) return "briefcase-outline";
+    if (categoryLower.includes("personal")) return "person-outline";
+    if (categoryLower.includes("health")) return "fitness-outline";
+    if (categoryLower.includes("study") || categoryLower.includes("learn")) return "book-outline";
+    if (categoryLower.includes("home")) return "home-outline";
+    if (categoryLower.includes("shopping")) return "cart-outline";
+    if (categoryLower.includes("finance")) return "cash-outline";
+
+    return "pricetag-outline";
+};
+
 
 export default function HabitList() {
     const { state, dispatch } = useHome();
-    
+
     const { selectedDate, completionMap } = state;
 
     const [habits, setHabits] = useState<HabitRecord[]>([]);
-   
-     const fetchData = async () => {
-            try {
-                if (!db) return;
-                const dateISO = selectedDate.toISOString().split("T")[0]; // keep only YYYY-MM-DD
 
-                // Fetch habits
-                const habitsRaw = await db.getAllAsync<HabitRecord>(
-                    `SELECT * FROM habits
+    const fetchData = async () => {
+        try {
+            if (!db) return;
+            const dateISO = selectedDate.toISOString().split("T")[0]; // keep only YYYY-MM-DD
+
+            // Fetch habits
+            const habitsRaw = await db.getAllAsync<HabitRecord>(
+                `SELECT * FROM habits
                 WHERE date(start_date) <= date(?)
                   AND (end_date IS NULL OR date(end_date) >= date(?))
                   AND (
@@ -38,39 +81,40 @@ export default function HabitList() {
                     )
                   )
                 ORDER BY created_at DESC;`,
-                    [dateISO, dateISO, dateISO, dateISO, dateISO]
-                );
-                setHabits(habitsRaw);
+                [dateISO, dateISO, dateISO, dateISO, dateISO]
+            );
+            setHabits(habitsRaw);
+            dispatch({ type: "SET_HABIT_COUNT", payload: habitsRaw.length });
 
-                // Fetch completions only for the selected date
-                const rows = await db.getAllAsync<any>(
-                    `SELECT habit_id AS id, point, log_date
+            // Fetch completions only for the selected date
+            const rows = await db.getAllAsync<any>(
+                `SELECT habit_id AS id, point, log_date
                  FROM completions
                  WHERE date(log_date) = date(?)`,
-                    [dateISO]
-                );
+                [dateISO]
+            );
 
-                const map = new Map(
-                    rows.map(r => [
-                        r.id,
-                        {
-                            completed: true,
-                            point: r.point,
-                            log_date: r.log_date,
-                        },
-                    ])
-                );
+            const map = new Map(
+                rows.map(r => [
+                    r.id,
+                    {
+                        completed: true,
+                        point: r.point,
+                        log_date: r.log_date,
+                    },
+                ])
+            );
 
-             
-                dispatch({ type: "SET_HABIT_COMPLETION_MAP", payload: map });
-            } catch (error) {
-                console.error("Error fetching habits or completions:", error);
-            }
-        };
-   
+
+            dispatch({ type: "SET_HABIT_COMPLETION_MAP", payload: map });
+        } catch (error) {
+            console.error("Error fetching habits or completions:", error);
+        }
+    };
+
     /** Fetch habits and completions */
     useEffect(() => {
-       
+
 
         fetchData();
     }, [selectedDate]);
@@ -82,9 +126,9 @@ export default function HabitList() {
             await db.runAsync(`DELETE FROM completions WHERE habit_id = ?`, [habit.id]);
             const newMap = new Map(completionMap);
             newMap.delete(habit.id);
-            dispatch({ type: "SET_HABIT_COMPLETION_MAP", payload: newMap });  
+            dispatch({ type: "SET_HABIT_COMPLETION_MAP", payload: newMap });
         } else {
-            
+
             dispatch({ type: "SET_HABIT_COMPLETION_DETAILS", payload: habit });
         }
 
@@ -92,18 +136,18 @@ export default function HabitList() {
 
     useEffect(() => {
         // subscribe to the habit refetch
-        
-        
-            eventEmitter.on('habit-refetch', fetchData);
-            
-        
-            return () => {
-                eventEmitter.off('habit-refetch', fetchData);
-                
-            };
+
+
+        eventEmitter.on('habit-refetch', fetchData);
+
+
+        return () => {
+            eventEmitter.off('habit-refetch', fetchData);
+
+        };
     }, []);
 
-    
+
 
 
     const isCompleted = (habitId: string) => completionMap.get(habitId)?.completed ?? false;
@@ -119,38 +163,81 @@ export default function HabitList() {
         return sel.getTime() === today.getTime();
     };
 
-  
-
-    if (!habits.length) return <View><Text>No habits found</Text></View>;
 
 
+    if (!habits.length) return (
+        <View style={styles.emptyContainer}>
+            <Ionicons name="document-text-outline" size={48} color={colors.subtle} />
+            <Text style={styles.emptyText}>No habits found</Text>
+        </View>
+    );
 
     return (
-        <View style={styles.habit_container}>
-
+        <View style={styles.listContainer}>
             {habits.map(habit => (
-                <TouchableOpacity
-                    key={habit.id}
-                    style={styles.checkboxRow}
-                    disabled={!canCompleteHabit(habit)}
-                    onPress={() => takeCompletionInput(habit)}
-                >
-                    <Ionicons
-                        name={isCompleted(habit.id) ? "checkbox" : "square-outline"}
-                        size={22}
-                        color={colors.primary}
-                    />
-                    <Text
-                        style={[
-                            styles.habitText,
-                            isCompleted(habit.id) && styles.strikeText,
-                            !canCompleteHabit(habit) && { opacity: 0.5 }
-                        ]}
+                <View key={habit.id} style={styles.card}>
+                    <TouchableOpacity
+                        style={styles.cardHeader}
+                        disabled={!canCompleteHabit(habit)}
+                        onPress={() => takeCompletionInput(habit)}
+                        activeOpacity={0.7}
                     >
-                        {habit.habit_name} ({habit.frequency})
-                    </Text>
-                    <Text style={{ color: colors.text, marginLeft: 10 }}>{habitPoints(habit.id)}</Text>
-                </TouchableOpacity>
+                        <View style={styles.mainRow}>
+                            <Ionicons
+                                name={isCompleted(habit.id) ? "checkbox" : "square-outline"}
+                                size={24}
+                                color={isCompleted(habit.id) ? colors.success : colors.primary}
+                            />
+                            <View style={styles.content}>
+                                <Text
+                                    style={[
+                                        styles.heading,
+                                        isCompleted(habit.id) && styles.strikeText,
+                                        !canCompleteHabit(habit) && { opacity: 0.5 }
+                                    ]}
+                                    numberOfLines={2}
+                                >
+                                    {habit.habit_name}
+                                </Text>
+
+                                <View style={styles.categoryBadge}>
+                                    <Ionicons
+                                        name={getCategoryIcon(habit.category)}
+                                        size={14}
+                                        color={colors.textOnPrimary}
+                                        style={styles.categoryIcon}
+                                    />
+                                    <Text style={styles.categoryText}>
+                                        {habit.category || "Uncategorized"}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.pointsBadge}>
+                                <Ionicons name="star" size={14} color={colors.buttonOrange} />
+                                <Text style={styles.pointsText}>{habitPoints(habit.id)}</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+
+                    <View style={styles.footerRow}>
+                        <View style={styles.infoItem}>
+                            <Ionicons name="repeat" size={14} color={colors.info} />
+                            <Text style={styles.infoText}>{habit.frequency}</Text>
+                        </View>
+
+                        <View style={styles.infoItem}>
+                            <Ionicons name="calendar-outline" size={14} color={colors.info} />
+                            <Text style={styles.infoText}>
+                                {formatHumanDate(habit.start_date)}
+                            </Text>
+                            <Ionicons name="arrow-forward" size={12} color={colors.subtle} />
+                            <Text style={styles.infoText}>
+                                {formatHumanDate(habit.end_date)}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
             ))}
         </View>
     );
@@ -280,7 +367,7 @@ export function HabitCompletionModal() {
             point = value === "Yes" ? habit.task_point : -Math.abs(habit.negative_task_point);
         }
 
-       
+
         const newMap = new Map(completionMap);
         newMap.set(habit.id, {
             completed: newStatus,
@@ -298,7 +385,7 @@ export function HabitCompletionModal() {
                  VALUES (?, ?, ?, ?)`,
                     [uuid.v4().toString(), habit.id, new Date().toISOString(), point]
                 );
-              
+
                 dispatch({ type: "SET_HABIT_COMPLETION_DETAILS", payload: null });
             } else {
                 await db.runAsync(`DELETE FROM completions WHERE habit_id = ?`, [habit.id]);
@@ -326,27 +413,104 @@ export function HabitCompletionModal() {
 }
 
 const styles = StyleSheet.create({
-    habit_container: {
+    listContainer: {
         flex: 1,
-        backgroundColor: colors.background,
-        borderColor: colors.secondary,
-        borderWidth: 1,
-        borderRadius: 8,
-        padding: 10,
+        gap: 8,
     },
-    checkboxRow: {
+    emptyContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingVertical: 40,
+    },
+    emptyText: {
+        fontFamily: getFontFamily('regular'),
+        fontSize: 16,
+        color: colors.subtle,
+        marginTop: 12,
+    },
+    card: {
+        backgroundColor: colors.background2,
+        borderRadius: 4,
+        padding: 4,
+        marginBottom: 8,
+    },
+    cardHeader: {
+        marginBottom: 12,
+    },
+    mainRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 12,
+    },
+    content: {
+        flex: 1,
+        gap: 6,
+    },
+    heading: {
+        fontFamily: getFontFamily('bold'),
+        fontSize: 18,
+        color: colors.text,
+        lineHeight: 24,
+    },
+    categoryBadge: {
         flexDirection: "row",
         alignItems: "center",
-        marginVertical: 6,
+        backgroundColor: colors.primary,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: "flex-start",
+        gap: 4,
     },
-    habitText: {
-        fontSize: 16,
+    categoryIcon: {
+        marginRight: 2,
+    },
+    categoryText: {
+        fontFamily: getFontFamily('bold'),
+        fontSize: 11,
+        color: colors.textOnPrimary,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+    },
+    pointsBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: colors.background,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 16,
+        gap: 4,
+        borderWidth: 1,
+        borderColor: colors.buttonOrange,
+    },
+    pointsText: {
+        fontFamily: getFontFamily('bold'),
+        fontSize: 14,
         color: colors.text,
-        marginLeft: 8,
+    },
+    footerRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: `${colors.subtle}20`,
+    },
+    infoItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+    infoText: {
+        fontFamily: getFontFamily('regular'),
+        fontSize: 12,
+        color: colors.info,
     },
     strikeText: {
         textDecorationLine: "line-through",
-        color: colors.text || "#888",
+        opacity: 0.5,
     },
 });
 

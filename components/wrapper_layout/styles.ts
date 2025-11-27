@@ -1,4 +1,5 @@
 import { colors } from "@/constants/colors"; // adjust path accordingly
+import { fonts } from "@/constants/fonts";
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
@@ -45,14 +46,14 @@ export const styles = StyleSheet.create({
         borderRadius: 2,
     },
     pageTitle: {
+        fontFamily: fonts.bold,
         fontSize: 18,
-        fontWeight: '600',
         color: colors.text,
         textAlign: 'center',
     },
     appName: {
+        fontFamily: fonts.bold,
         fontSize: 20,
-        fontWeight: 'bold',
         color: colors.text,
         textAlign: 'center',
         alignSelf: "center",
@@ -93,9 +94,9 @@ export const styles = StyleSheet.create({
         color: colors.primary,
     },
     footerTitle: {
+        fontFamily: fonts.regular,
         fontSize: 11,
         color: colors.subtle,
-        fontWeight: '500',
     },
     sideBarWrapper: {
         position: 'absolute',
@@ -120,8 +121,8 @@ export const styles = StyleSheet.create({
         borderBottomColor: colors.subtle,
     },
     sidebarHeaderText: {
+        fontFamily: fonts.bold,
         fontSize: 20,
-        fontWeight: 'bold',
         color: colors.text,
     },
 
@@ -131,6 +132,7 @@ export const styles = StyleSheet.create({
         borderBottomColor: colors.subtle,
     },
     menuText: {
+        fontFamily: fonts.regular,
         fontSize: 16,
         color: colors.text
     },

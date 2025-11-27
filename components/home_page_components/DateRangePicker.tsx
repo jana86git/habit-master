@@ -1,5 +1,6 @@
 import { useHome } from "@/app/home";
 import { colors } from "@/constants/colors";
+import { fonts } from "@/constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
@@ -60,8 +61,8 @@ const styles = StyleSheet.create({
   },
   dateText: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textOnPrimary,
-    fontWeight: "bold",
+    fontFamily: fonts.bold
   },
 });

@@ -8,6 +8,7 @@ import { Action } from "@/components/home_page_components/types";
 import WindowScrollview from "@/components/window_scrollview/WindowScrollview";
 import { colors } from "@/constants/colors";
 import { eventEmitter } from "@/constants/eventEmitter";
+import { fonts } from "@/constants/fonts";
 import { createContext, Dispatch, useContext, useEffect, useMemo, useReducer } from "react";
 import { Text, View } from "react-native";
 interface HOME_PAGE_CONTEXT_TYPE {
@@ -75,16 +76,23 @@ export default function Home() {
         <View style={{ flex: 1 }}>
             {/* Tab Navigation */}
             <View style={styles.tabContainer}>
-                <Button3D style={{ flex: 1 }} active={state.activeTab === 'tasks'} onClick={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "tasks" })}>
-                    <View style={{ padding: 10 }}>
-                        <Text style={{ color: colors.textOnPrimary, fontSize: 16, fontWeight: "bold" }}>Task</Text>
+                <Button3D active={state.activeTab === 'tasks'} onClick={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "tasks" })}>
+                    <View style={{ padding: 4 }}>
+                        <Text style={{ color: colors.textOnPrimary, fontSize: 16, fontFamily: fonts.bold }}>Task</Text>
                     </View>
                 </Button3D>
-                <Button3D style={{ flex: 1 }} active={state.activeTab === 'habits'} onClick={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "habits" })}>
-                    <View style={{ padding: 10 }}>
-                        <Text style={{ color: colors.textOnPrimary, fontSize: 16, fontWeight: "bold" }}>Habit</Text>
+                <Button3D active={state.activeTab === 'habits'} onClick={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "habits" })}>
+                    <View style={{ padding: 4 }}>
+                        <Text style={{ color: colors.textOnPrimary, fontSize: 16, fontFamily: fonts.bold }}>Habit</Text>
                     </View>
                 </Button3D>
+                <View style={styles.totalInfo}>
+                    <Text style={{ color: colors.text, fontFamily: fonts.regular }}>
+                        {state.activeTab === 'tasks'
+                            ? `Total Task: ${state.taskCount}`
+                            : `Total Habit: ${state.habitCount}`}
+                    </Text>
+                </View>
 
             </View>
             <WindowScrollview>

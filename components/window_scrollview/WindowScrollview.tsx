@@ -1,4 +1,5 @@
 import { colors } from '@/constants/colors';
+import { fonts } from '@/constants/fonts';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -7,6 +8,8 @@ import {
     ScrollView,
     ScrollViewProps,
     StyleSheet,
+    Text,
+    TouchableOpacity,
     View,
     ViewStyle,
 } from 'react-native';
@@ -15,12 +18,14 @@ interface WindowScrollviewProps extends ScrollViewProps {
     children: React.ReactNode;
     style?: ViewStyle;
     contentContainerStyle?: ViewStyle;
+    label?: string;
 }
 
 export default function WindowScrollview({
     children,
     style,
     contentContainerStyle,
+    label = 'label',
     ...props
 }: WindowScrollviewProps) {
     const [contentHeight, setContentHeight] = useState(1);
@@ -90,60 +95,110 @@ export default function WindowScrollview({
     });
 
     return (
-        <View style={[styles.container, style]}>
-            <Animated.ScrollView
-                {...props}
-                ref={scrollViewRef}
-                style={styles.scrollView}
-                contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
-                onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
-                onContentSizeChange={(w, h) => setContentHeight(h)}
-                onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: false }
-                )}
-                scrollEventThrottle={16}
-                showsVerticalScrollIndicator={false}
-            >
-                {children}
-            </Animated.ScrollView>
-
-            {contentHeight > containerHeight && (
-                <View style={styles.track}>
-                    <Animated.View
-                        {...panResponder.panHandlers}
-                        style={[
-                            styles.thumb,
-                            {
-                                height: thumbHeight,
-                                transform: [{ translateY: scrollIndicatorPosition }],
-                            },
-                        ]}
-                    >
-                        <MaterialCommunityIcons name="drag-vertical" size={16} color={colors.textOnPrimary} />
-                    </Animated.View>
+        <View style={[styles.outerContainer, style]}>
+            {/* Header Bar */}
+            <View style={styles.headerBar}>
+                <Text style={styles.headerLabel}>{label}</Text>
+                <View style={styles.headerButtons}>
+                    <TouchableOpacity style={styles.headerButton}>
+                        <View style={styles.buttonCircle} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.headerButton}>
+                        <View style={styles.buttonCircle} />
+                    </TouchableOpacity>
                 </View>
-            )}
+            </View>
+
+            {/* Content Area */}
+            <View style={styles.container}>
+                <Animated.ScrollView
+                    {...props}
+                    ref={scrollViewRef}
+                    style={styles.scrollView}
+                    contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
+                    onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
+                    onContentSizeChange={(w, h) => setContentHeight(h)}
+                    onScroll={Animated.event(
+                        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                        { useNativeDriver: false }
+                    )}
+                    scrollEventThrottle={16}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {children}
+                </Animated.ScrollView>
+
+                {contentHeight > containerHeight && (
+                    <View style={styles.track}>
+                        <Animated.View
+                            {...panResponder.panHandlers}
+                            style={[
+                                styles.thumb,
+                                {
+                                    height: thumbHeight,
+                                    transform: [{ translateY: scrollIndicatorPosition }],
+                                },
+                            ]}
+                        >
+                            <MaterialCommunityIcons name="drag-vertical" size={16} color={colors.textOnPrimary} />
+                        </Animated.View>
+                    </View>
+                )}
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    outerContainer: {
+        flex: 1,
+        borderWidth: 4,
+        borderColor: colors.primary,
+        borderRadius: 0,
+        overflow: 'hidden',
+        backgroundColor: colors.primary,
+    },
+    headerBar: {
+        height: 36,
+        backgroundColor: colors.primary,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 8,
+    },
+    headerLabel: {
+        fontFamily: fonts.regular,
+        color: colors.textOnPrimary,
+        fontSize: 20,
+    },
+    headerButtons: {
+        flexDirection: 'row',
+
+    },
+    headerButton: {
+        width: 24,
+        height: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonCircle: {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: colors.textOnPrimary,
+    },
     container: {
         flex: 1,
         position: 'relative',
-        backgroundColor: colors.background2,
-        borderRadius: 16,
+        backgroundColor: colors.background,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: colors.subtle,
         paddingRight: 20, // Prevent content from going behind thumb
     },
     scrollView: {
         flex: 1,
     },
     contentContainer: {
-        padding: 16,
+        padding: 4,
     },
     track: {
         position: 'absolute',

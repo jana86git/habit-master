@@ -1,4 +1,5 @@
 import { colors } from "@/constants/colors";
+import { fonts } from "@/constants/fonts";
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
@@ -31,6 +32,7 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
+    fontFamily: fonts.bold,
     color: colors.text,
     textTransform: 'uppercase',
   },
@@ -40,4 +42,4 @@ export const styles = StyleSheet.create({
   content: {
     gap: 16,
   },
-} )
+})

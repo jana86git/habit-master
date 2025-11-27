@@ -1,4 +1,5 @@
 import { colors } from '@/constants/colors';
+import { fonts } from '@/constants/fonts';
 import { Dimensions, StyleSheet } from 'react-native';
 const height = Dimensions.get('window').height;
 
@@ -13,12 +14,12 @@ export const styles = StyleSheet.create({
     // backgroundColor: 'green',
     justifyContent: 'center',
     alignItems: 'center',
-    flex:1,
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    height: height-100,
+    height: height - 100,
     alignSelf: 'center',
-    zIndex:999999
+    zIndex: 999999
   },
   modalContainer: {
     width: '95%',
@@ -32,7 +33,7 @@ export const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     borderColor: colors.secondary,
-    borderWidth:1
+    borderWidth: 1
   },
   header: {
     flexDirection: 'row',
@@ -41,8 +42,8 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
+    fontFamily: fonts.bold,
     fontSize: 18,
-    fontWeight: '600',
     color: colors.text,
   },
   closeButton: {

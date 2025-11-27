@@ -1,4 +1,5 @@
 import { colors } from "@/constants/colors";
+import { fonts } from "@/constants/fonts";
 import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     container: {
@@ -8,8 +9,8 @@ export const styles = StyleSheet.create({
         alignItems: "center",
     },
     title: {
+        fontFamily: fonts.bold,
         fontSize: 18,
-        fontWeight: "bold",
         marginBottom: 20,
         color: "black",
     },

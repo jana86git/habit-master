@@ -6,6 +6,7 @@
  * 
  */
 import { colors } from '@/constants/colors';
+import { fonts } from '@/constants/fonts';
 import { Ionicons } from '@expo/vector-icons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { RelativePathString, router, usePathname } from 'expo-router';
@@ -147,7 +148,7 @@ export function AppWrapperComponent({ children }: { children: ReactNode }) {
                             <Button3D active={pathName === item.value} onClick={() => { handleIconClick(item as IconItem) }} key={index}>
                                 <View style={styles.footerItem}>
                                     <IconCompnent name={item.iconName as any} size={18} color={colors.textOnPrimary} />
-                                    <Text style={[styles.footerTitle, { color: colors.textOnPrimary, fontWeight: "bold" }]}>{item.title}</Text>
+                                    <Text style={[styles.footerTitle, { color: colors.textOnPrimary, fontFamily: fonts.bold }]}>{item.title}</Text>
                                 </View>
                             </Button3D>
                         )

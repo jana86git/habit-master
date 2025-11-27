@@ -1,4 +1,5 @@
 import { colors } from "@/constants/colors";
+import { fonts } from "@/constants/fonts";
 import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     container: {
@@ -7,14 +8,14 @@ export const styles = StyleSheet.create({
         backgroundColor: colors.background
     },
     title: {
+        fontFamily: fonts.bold,
         fontSize: 22,
-        fontWeight: "bold",
         marginBottom: 15,
         color: colors.text
     },
     subTitle: {
+        fontFamily: fonts.bold,
         marginTop: 15,
-        fontWeight: "600",
         fontSize: 16,
         color: colors.text,
         marginBottom: 8
@@ -37,10 +38,10 @@ export const styles = StyleSheet.create({
     },
     dateWrapper: {
         flexDirection: "row",
-        justifyContent:"space-between"
+        justifyContent: "space-between"
     },
-    date_cell:{
-        width:"45%"
+    date_cell: {
+        width: "45%"
     },
 
     subtask_card: {
@@ -49,13 +50,13 @@ export const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         marginTop: 12,
-        flexDirection:"row",
-        justifyContent:"space-between"
+        flexDirection: "row",
+        justifyContent: "space-between"
     },
 
-    subtask_name:{
-        fontSize:16,
-        fontWeight:"bold",
-        color:colors.text
+    subtask_name: {
+        fontFamily: fonts.bold,
+        fontSize: 16,
+        color: colors.text
     }
 })

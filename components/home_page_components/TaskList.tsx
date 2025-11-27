@@ -1,6 +1,7 @@
 import { useHome } from "@/app/home";
 import { colors } from "@/constants/colors";
 import { eventEmitter } from "@/constants/eventEmitter";
+import { getFontFamily } from "@/constants/fonts";
 import { db } from "@/db/db";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
@@ -13,8 +14,50 @@ type CompletionStatus = {
     point: number;
 };
 
+/** 📅 Convert ISO date string to human-readable format */
+const formatHumanDate = (dateStr: string | null): string => {
+    if (!dateStr) return "No end date";
+
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Reset time for comparison
+    today.setHours(0, 0, 0, 0);
+    tomorrow.setHours(0, 0, 0, 0);
+    yesterday.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+
+    if (date.getTime() === today.getTime()) return "Today";
+    if (date.getTime() === tomorrow.getTime()) return "Tomorrow";
+    if (date.getTime() === yesterday.getTime()) return "Yesterday";
+
+    // Format as "Jan 15, 2025"
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+};
+
+/** 🎨 Get category icon based on category name */
+const getCategoryIcon = (category: string | null): keyof typeof Ionicons.glyphMap => {
+    if (!category) return "pricetag-outline";
+
+    const categoryLower = category.toLowerCase();
+    if (categoryLower.includes("work")) return "briefcase-outline";
+    if (categoryLower.includes("personal")) return "person-outline";
+    if (categoryLower.includes("health")) return "fitness-outline";
+    if (categoryLower.includes("study") || categoryLower.includes("learn")) return "book-outline";
+    if (categoryLower.includes("home")) return "home-outline";
+    if (categoryLower.includes("shopping")) return "cart-outline";
+    if (categoryLower.includes("finance")) return "cash-outline";
+
+    return "pricetag-outline";
+};
+
 export default function TaskList() {
-    const { state } = useHome();
+    const { state, dispatch } = useHome();
     const { selectedDate } = state;
 
     const [tasks, setTasks] = useState<TaskWithSubtask[]>([]);
@@ -91,6 +134,7 @@ ORDER BY datetime(created_at) DESC;
             }));
 
             setTasks(results);
+            dispatch({ type: "SET_TASK_COUNT", payload: results.length });
         } catch (error) {
             console.error("Error fetching tasks:", error);
         }
@@ -239,69 +283,109 @@ ORDER BY datetime(created_at) DESC;
 
     if (tasks.length === 0)
         return (
-            <View>
-                <Text>No tasks found</Text>
+            <View style={styles.emptyContainer}>
+                <Ionicons name="document-text-outline" size={48} color={colors.subtle} />
+                <Text style={styles.emptyText}>No tasks found</Text>
             </View>
         );
 
     return (
         <View style={styles.task_container}>
             {tasks.map((task) => (
-                <View key={task.id} style={styles.taskBlock}>
-                    {/* Task */}
+                <View key={task.id} style={styles.taskCard}>
+                    {/* Task Header */}
                     <TouchableOpacity
-                        style={styles.checkboxRow}
+                        style={styles.taskHeader}
                         onPress={() => toggleTaskCompletion(task)}
+                        activeOpacity={0.7}
                     >
-                        <Ionicons
-                            name={isCompleted(task.id) ? "checkbox" : "square-outline"}
-                            size={22}
-                            color={colors.primary}
-                        />
-                        <Text
-                            style={[
-                                styles.task_heading,
-                                isCompleted(task.id) && styles.strikeText,
-                            ]}
-                        >
-                            {task.task_name}
-                        </Text>
-                        <Text style={{ color: colors.text }}>Points: {point(task.id)}</Text>
+                        <View style={styles.taskMainRow}>
+                            <Ionicons
+                                name={isCompleted(task.id) ? "checkbox" : "square-outline"}
+                                size={24}
+                                color={isCompleted(task.id) ? colors.success : colors.primary}
+                            />
+                            <View style={styles.taskContent}>
+                                <Text
+                                    style={[
+                                        styles.task_heading,
+                                        isCompleted(task.id) && styles.strikeText,
+                                    ]}
+                                    numberOfLines={2}
+                                >
+                                    {task.task_name}
+                                </Text>
+
+                                {/* Category Badge */}
+                                <View style={styles.categoryBadge}>
+                                    <Ionicons
+                                        name={getCategoryIcon(task.category)}
+                                        size={14}
+                                        color={colors.textOnPrimary}
+                                        style={styles.categoryIcon}
+                                    />
+                                    <Text style={styles.categoryText}>
+                                        {task.category || "Uncategorized"}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {/* Points Badge */}
+                            <View style={styles.pointsBadge}>
+                                <Ionicons name="star" size={14} color={colors.buttonOrange} />
+                                <Text style={styles.pointsText}>{point(task.id)}</Text>
+                            </View>
+                        </View>
                     </TouchableOpacity>
 
-                    <Text style={{ color: colors.text }}>
-                        {task.start_date} -- {task.end_date}
-                    </Text>
+                    {/* Date Range */}
+                    <View style={styles.dateRow}>
+                        <Ionicons name="calendar-outline" size={14} color={colors.info} />
+                        <Text style={styles.dateText}>
+                            {formatHumanDate(task.start_date)}
+                        </Text>
+                        <Ionicons name="arrow-forward" size={12} color={colors.subtle} style={styles.dateArrow} />
+                        <Text style={styles.dateText}>
+                            {formatHumanDate(task.end_date)}
+                        </Text>
+                    </View>
 
-                    {/* Subtasks */}
+                    {/* Subtasks - Old Book Style */}
                     {task.subtasks?.length > 0 && (
-                        <View style={styles.subtaskContainer}>
-                            {task.subtasks.map((subtask) => (
-                                <TouchableOpacity
-                                    key={subtask.id}
-                                    style={styles.checkboxRow}
-                                    onPress={() =>
-                                        toggleSubtaskCompletion(subtask.id, subtask.point)
-                                    }
-                                >
-                                    <Ionicons
-                                        name={isCompleted(subtask.id) ? "checkbox" : "square-outline"}
-                                        size={18}
-                                        color={colors.secondary}
-                                    />
-                                    <Text
-                                        style={[
-                                            styles.subtaskText,
-                                            isCompleted(subtask.id) && styles.strikeText,
-                                        ]}
+                        <View style={styles.subtaskBookContainer}>
+                            <View style={styles.subtaskList}>
+                                {task.subtasks.map((subtask, index) => (
+                                    <TouchableOpacity
+                                        key={subtask.id}
+                                        style={styles.subtaskRow}
+                                        onPress={() =>
+                                            toggleSubtaskCompletion(subtask.id, subtask.point)
+                                        }
+                                        activeOpacity={0.7}
                                     >
-                                        {subtask.name}
-                                    </Text>
-                                    <Text style={{ color: colors.text }}>
-                                        Points: {point(subtask.id)}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                        <View style={styles.subtaskBullet}>
+                                            <Text style={styles.subtaskNumber}>{index + 1}</Text>
+                                        </View>
+                                        <Ionicons
+                                            name={isCompleted(subtask.id) ? "checkmark-circle" : "ellipse-outline"}
+                                            size={18}
+                                            color={isCompleted(subtask.id) ? colors.success : colors.secondary}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.subtaskText,
+                                                isCompleted(subtask.id) && styles.strikeText,
+                                            ]}
+                                            numberOfLines={1}
+                                        >
+                                            {subtask.name}
+                                        </Text>
+                                        <View style={styles.subtaskPoints}>
+                                            <Text style={styles.subtaskPointsText}>+{subtask.point}</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
                     )}
                 </View>
@@ -312,35 +396,161 @@ ORDER BY datetime(created_at) DESC;
 
 const styles = StyleSheet.create({
     task_container: {
-        flex: 1
+        flex: 1,
+        gap: 8,
     },
-    taskBlock: {
-        marginBottom: 16,
-        borderBottomWidth: 0.5,
-        borderBottomColor: colors.secondary,
-        paddingBottom: 8,
-    },
-    checkboxRow: {
-        flexDirection: "row",
+    emptyContainer: {
+        flex: 1,
+        justifyContent: "center",
         alignItems: "center",
-        marginVertical: 4,
+        paddingVertical: 40,
+    },
+    emptyText: {
+        fontFamily: getFontFamily('regular'),
+        fontSize: 16,
+        color: colors.subtle,
+        marginTop: 12,
+    },
+    taskCard: {
+        backgroundColor: colors.background2,
+        borderRadius: 4,
+        padding: 4,
+        marginBottom: 8,
+    },
+    taskHeader: {
+        marginBottom: 12,
+    },
+    taskMainRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 12,
+    },
+    taskContent: {
+        flex: 1,
+        gap: 6,
     },
     task_heading: {
+        fontFamily: getFontFamily('bold'),
         fontSize: 18,
         color: colors.text,
-        marginLeft: 8,
+        lineHeight: 24,
     },
-    subtaskContainer: {
-        marginLeft: 30,
+    categoryBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: colors.primary,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: "flex-start",
+        gap: 4,
+    },
+    categoryIcon: {
+        marginRight: 2,
+    },
+    categoryText: {
+        fontFamily: getFontFamily('bold'),
+        fontSize: 11,
+        color: colors.textOnPrimary,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+    },
+    pointsBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: colors.background,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 16,
+        gap: 4,
+        borderWidth: 1,
+        borderColor: colors.buttonOrange,
+    },
+    pointsText: {
+        fontFamily: getFontFamily('bold'),
+        fontSize: 14,
+        color: colors.text,
+    },
+    dateRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 4,
+        backgroundColor: colors.background,
+        borderRadius: 8,
+        marginBottom: 8,
+    },
+    dateText: {
+        fontFamily: getFontFamily('regular'),
+        fontSize: 13,
+        color: colors.info,
+    },
+    dateArrow: {
+        marginHorizontal: 4,
+    },
+    subtaskBookContainer: {
         marginTop: 4,
+
+        position: "relative",
+        overflow: "hidden",
+    },
+    bookSpine: {
+        position: "absolute",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 6,
+        backgroundColor: colors.info,
+        borderTopLeftRadius: 8,
+        borderBottomLeftRadius: 8,
+    },
+    subtaskList: {
+        paddingLeft: 16,
+        paddingRight: 12,
+        paddingVertical: 8,
+    },
+    subtaskRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 8,
+        gap: 8,
+        borderBottomWidth: 0.5,
+        borderBottomColor: `${colors.subtle}20`,
+    },
+    subtaskBullet: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: colors.info,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    subtaskNumber: {
+        fontFamily: getFontFamily('bold'),
+        fontSize: 11,
+        color: colors.textOnPrimary,
     },
     subtaskText: {
-        fontSize: 15,
+        flex: 1,
+        fontFamily: getFontFamily('regular'),
+        fontSize: 14,
         color: colors.text,
-        marginLeft: 8,
+        fontStyle: "italic",
+    },
+    subtaskPoints: {
+        backgroundColor: colors.success,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 8,
+    },
+    subtaskPointsText: {
+        fontFamily: getFontFamily('bold'),
+        fontSize: 11,
+        color: colors.textOnSuccess,
     },
     strikeText: {
         textDecorationLine: "line-through",
-        color: colors.text || "#888",
+        opacity: 0.5,
     },
 });

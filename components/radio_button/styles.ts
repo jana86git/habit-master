@@ -1,4 +1,5 @@
 import { colors } from "@/constants/colors";
+import { fonts } from "@/constants/fonts";
 import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     container: {
@@ -20,12 +21,14 @@ export const styles = StyleSheet.create({
         elevation: 5,
     },
     title: {
+        fontFamily: fonts.bold,
         fontSize: 24,
         fontWeight: 'bold',
         color: colors.text,
         marginBottom: 8,
     },
     subtitle: {
+        fontFamily: fonts.regular,
         fontSize: 14,
         color: colors.subtle,
         marginBottom: 24,
@@ -60,6 +63,7 @@ export const styles = StyleSheet.create({
         backgroundColor: colors.primary,
     },
     radioLabel: {
+        fontFamily: fonts.regular,
         fontSize: 16,
         color: colors.subtle,
     },
@@ -78,10 +82,12 @@ export const styles = StyleSheet.create({
         borderColor: colors.secondary,
     },
     resultText: {
+        fontFamily: fonts.regular,
         fontSize: 14,
         color: colors.subtle,
     },
     resultValue: {
+        fontFamily: fonts.bold,
         fontWeight: '600',
         color: colors.primary,
     },

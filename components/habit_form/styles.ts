@@ -1,5 +1,7 @@
 import { colors } from "@/constants/colors";
+import { fonts } from "@/constants/fonts";
 import { StyleSheet } from "react-native";
+
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -7,14 +9,14 @@ export const styles = StyleSheet.create({
         backgroundColor: colors.background
     },
     title: {
+        fontFamily: fonts.bold,
         fontSize: 22,
-        fontWeight: "bold",
         marginBottom: 15,
         color: colors.text
     },
     subTitle: {
+        fontFamily: fonts.bold,
         marginTop: 15,
-        fontWeight: "600",
         fontSize: 16,
         color: colors.text,
         marginBottom: 8
@@ -37,9 +39,9 @@ export const styles = StyleSheet.create({
     },
     dateWrapper: {
         flexDirection: "row",
-        justifyContent:"space-between"
+        justifyContent: "space-between"
     },
-    date_cell:{
-        width:"45%"
+    date_cell: {
+        width: "45%"
     }
 })

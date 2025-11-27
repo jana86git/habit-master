@@ -1,4 +1,5 @@
 import { colors } from "@/constants/colors";
+import { fonts } from "@/constants/fonts";
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
@@ -6,12 +7,13 @@ export const styles = StyleSheet.create({
         marginVertical: 10,
     },
     label: {
+        fontFamily: fonts.bold,
         fontSize: 16,
         marginBottom: 5,
         color: colors.info,
-        fontWeight:"bold"
     },
     input: {
+        fontFamily: fonts.regular,
         paddingVertical: 8,
         fontSize: 16,
         color: colors.text,

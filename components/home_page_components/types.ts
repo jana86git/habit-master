@@ -6,6 +6,8 @@ export type Action =
     | { type: "SET_HABIT_COMPLETION_DETAILS", payload: HabitRecord | null }
     | { type: "SET_HABIT_COMPLETION_MAP", payload: Map<string, CompletionStatus> }
     | { type: "SET_ACTIVE_TAB", payload: "tasks" | "habits" }
+    | { type: "SET_TASK_COUNT", payload: number }
+    | { type: "SET_HABIT_COUNT", payload: number }
 
 export type HabitRecord = {
     id: string;

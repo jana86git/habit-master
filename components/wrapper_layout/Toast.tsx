@@ -1,3 +1,4 @@
+import { fonts } from '@/constants/fonts';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -14,13 +15,13 @@ export const Toast: React.FC<ToastProps> = ({ visible, message, type, onClose })
   const backgroundColor = type === 'success' ? '#4CAF50' : '#F44336';
   const iconName = type === 'success' ? 'checkmark-circle' : 'alert-circle';
 
-  
+
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <View style={styles.content}>
         <Ionicons name={iconName} size={20} color="white" style={styles.icon} />
-        <Text style={[styles.message,{fontSize:18}]}>{message}</Text>
+        <Text style={[styles.message, { fontSize: 18 }]}>{message}</Text>
       </View>
       <TouchableOpacity onPress={onClose} style={styles.closeButton}>
         <Ionicons name="close" size={30} color="white" />
@@ -59,9 +60,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   message: {
+    fontFamily: fonts.regular,
     color: 'white',
     fontSize: 14,
-    fontWeight: '500',
     flex: 1,
   },
   closeButton: {
