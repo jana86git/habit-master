@@ -320,7 +320,7 @@ ORDER BY datetime(created_at) DESC;
                                 <View style={styles.categoryBadge}>
                                     <Ionicons
                                         name={getCategoryIcon(task.category)}
-                                        size={14}
+                                        size={10}
                                         color={colors.textOnPrimary}
                                         style={styles.categoryIcon}
                                     />
@@ -439,9 +439,9 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: colors.primary,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
         alignSelf: "flex-start",
         gap: 4,
     },
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     },
     categoryText: {
         fontFamily: getFontFamily('bold'),
-        fontSize: 11,
+        fontSize: 10,
         color: colors.textOnPrimary,
         textTransform: "uppercase",
         letterSpacing: 0.5,
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
         paddingHorizontal: 10,
         paddingVertical: 6,
-        borderRadius: 16,
+        borderRadius: 4,
         gap: 4,
         borderWidth: 1,
         borderColor: colors.buttonOrange,
@@ -474,11 +474,12 @@ const styles = StyleSheet.create({
     dateRow: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "center",
         gap: 6,
         paddingVertical: 8,
         paddingHorizontal: 4,
         backgroundColor: colors.background,
-        borderRadius: 8,
+        borderRadius: 4,
         marginBottom: 8,
     },
     dateText: {
@@ -502,8 +503,8 @@ const styles = StyleSheet.create({
         bottom: 0,
         width: 6,
         backgroundColor: colors.info,
-        borderTopLeftRadius: 8,
-        borderBottomLeftRadius: 8,
+        borderTopLeftRadius: 4,
+        borderBottomLeftRadius: 4,
     },
     subtaskList: {
         paddingLeft: 16,
@@ -521,7 +522,7 @@ const styles = StyleSheet.create({
     subtaskBullet: {
         width: 20,
         height: 20,
-        borderRadius: 10,
+        borderRadius: 4,
         backgroundColor: colors.info,
         justifyContent: "center",
         alignItems: "center",
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.success,
         paddingHorizontal: 8,
         paddingVertical: 2,
-        borderRadius: 8,
+        borderRadius: 4,
     },
     subtaskPointsText: {
         fontFamily: getFontFamily('bold'),

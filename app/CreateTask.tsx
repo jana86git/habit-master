@@ -1,14 +1,16 @@
 
+import Button3D from "@/components/button_3d/Button3D"
 import TaskForm from "@/components/task_form/TaskForm"
 import TaskFormProvider, { useTaskForm } from "@/components/task_form/TaskFormContext"
 import { colors } from "@/constants/colors"
 import { emitError } from "@/constants/emitError"
 import { emitTasksRefetch } from "@/constants/emitRefetch"
 import { emitSuccess } from "@/constants/emitSuccess"
+import { fonts } from "@/constants/fonts"
 import { createOneTimeReminder } from "@/constants/notificationAndroid"
 import { db } from "@/db/db"
 import { useState } from "react"
-import { Button, View } from "react-native"
+import { Text, View } from "react-native"
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view"
 import uuid from 'react-native-uuid'
 
@@ -19,9 +21,9 @@ export default function CreateTask() {
         <TaskFormProvider>
             <KeyboardAwareScrollView
 
-                extraScrollHeight={20}       // � adds some padding when keyboard opens
-                enableOnAndroid={true}       // � works well on Android too
-                keyboardShouldPersistTaps="handled"  // � allows tapping other inputs without dismissing keyboard
+                extraScrollHeight={20}       // ✅ adds some padding when keyboard opens
+                enableOnAndroid={true}       // ✅ works well on Android too
+                keyboardShouldPersistTaps="handled"  // ✅ allows tapping other inputs without dismissing keyboard
             >
                 <TaskForm />
             </KeyboardAwareScrollView>
@@ -129,7 +131,7 @@ function SubmitButton() {
             const event_data = await createOneTimeReminder(
                 "Task Reminder:",
                 taskName,
-               finalNotificationDate
+                finalNotificationDate
             );
 
             // ✅ FAILURE → Remove reminder, continue with task creation
@@ -195,7 +197,11 @@ function SubmitButton() {
 
     return (
         <View style={{ padding: 16 }}>
-            <Button disabled={loading} title="Submit" onPress={createTask} />
+            <Button3D disabled={loading} onClick={createTask}>
+                <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+                    <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>Submit</Text>
+                </View>
+            </Button3D>
         </View>
     );
 }

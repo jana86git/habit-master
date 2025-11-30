@@ -1,7 +1,11 @@
 import React, { useState } from "react";
-import { Button, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 // import { Picker } from "@react-native-picker/picker";
+import { colors } from "@/constants/colors";
+import { fonts } from "@/constants/fonts";
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import Button3D from "../button_3d/Button3D";
 import RadioButton from "../radio_button/RadioButton";
 import TextInputComponent from "../text_input/TextInput";
 import { useHabitForm } from "./HabitFormContext";
@@ -13,7 +17,7 @@ export default function HabitForm() {
   const [showStartDate, setShowStartDate] = useState(false);
   const [showEndDate, setShowEndDate] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
-  
+
 
   const renderRadioGroup = (
     label: string,
@@ -54,8 +58,12 @@ export default function HabitForm() {
       <View style={styles.dateWrapper}>
         <View style={styles.date_cell}>
           {/* Start Date */}
-          <Button title="Select Start Date" onPress={() => setShowStartDate(true)} />
-          <Text style={styles.label}>
+          <Button3D onClick={() => setShowStartDate(true)}>
+            <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+              <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>Start Date</Text>
+            </View>
+          </Button3D>
+          <Text style={styles.selectedDate}>
             {state.startDate.toLocaleDateString("en-GB")}
           </Text>
           {showStartDate && (
@@ -72,16 +80,22 @@ export default function HabitForm() {
         </View>
         <View style={styles.date_cell}>
           {/* End Date */}
-          <Button title={"Select End Date"} onPress={() => setShowEndDate(true)} />
-          <View>
-            <Text style={styles.label}>
+          <Button3D onClick={() => setShowEndDate(true)}>
+            <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+              <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>End Date</Text>
+            </View>
+          </Button3D>
+          <View style={styles.dateRow}>
+            <Text style={styles.selectedDate}>
               {state.endDate
                 ? state.endDate.toLocaleDateString("en-GB")
-                : "No end date selected"}
+                : "Not selected"}
             </Text>
-            <TouchableOpacity onPress={() => { dispatch({ type: "SET_END_DATE", payload: null }) }}>
-              <Text style={styles.label}>Clear End Date</Text>
-            </TouchableOpacity>
+            {state.endDate && (
+              <TouchableOpacity onPress={() => dispatch({ type: "SET_END_DATE", payload: null })}>
+                <Ionicons name="close-circle" size={20} color={colors.danger || "red"} />
+              </TouchableOpacity>
+            )}
           </View>
           {showEndDate && (
             <DateTimePicker
@@ -99,20 +113,21 @@ export default function HabitForm() {
 
       <View>
         <Text style={styles.subTitle}>Remind Me At:</Text>
-        <Button
-          title="Select Time"
-          onPress={() => setShowReminder(true)}
-        ></Button>
-       {state?.reminderTime && <Text style={styles.label}>
+        <Button3D onClick={() => setShowReminder(true)}>
+          <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+            <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>Select Time</Text>
+          </View>
+        </Button3D>
+        {state?.reminderTime && <Text style={styles.label}>
           {state.reminderTime.toLocaleTimeString("en-GB")}
         </Text>}
-        {showReminder &&  (
+        {showReminder && (
           <DateTimePicker
             value={state.reminderTime || new Date()}
             mode="time"
             onChange={(e, date) => {
               setShowReminder(false);
-            
+
               if (date) dispatch({ type: "SET_REMINDER_TIME", payload: date });
             }}
           />
@@ -231,7 +246,7 @@ export default function HabitForm() {
 
         />
       </View>}
-    
+
     </View>
   );
 }

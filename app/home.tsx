@@ -77,12 +77,12 @@ export default function Home() {
             {/* Tab Navigation */}
             <View style={styles.tabContainer}>
                 <Button3D active={state.activeTab === 'tasks'} onClick={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "tasks" })}>
-                    <View style={{ padding: 4 }}>
+                    <View style={{ padding: 4, width: 60, alignItems: "center" }}>
                         <Text style={{ color: colors.textOnPrimary, fontSize: 16, fontFamily: fonts.bold }}>Task</Text>
                     </View>
                 </Button3D>
                 <Button3D active={state.activeTab === 'habits'} onClick={() => dispatch({ type: "SET_ACTIVE_TAB", payload: "habits" })}>
-                    <View style={{ padding: 4 }}>
+                    <View style={{ padding: 4, width: 60, alignItems: "center" }}>
                         <Text style={{ color: colors.textOnPrimary, fontSize: 16, fontFamily: fonts.bold }}>Habit</Text>
                     </View>
                 </Button3D>
@@ -107,7 +107,6 @@ export default function Home() {
                 )}
 
 
-                <Button3D onClick={() => { }}>hello world</Button3D>
 
 
             </WindowScrollview>

@@ -5,7 +5,7 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
+        padding: 8,
         backgroundColor: colors.background
     },
     title: {
@@ -23,12 +23,19 @@ export const styles = StyleSheet.create({
     },
     label: {
         fontSize: 16,
-        color: "#444",
+        color: colors.text,
         marginVertical: 5,
+    },
+    selectedDate: {
+        fontSize: 14,
+        color: colors.text,
+        marginVertical: 5,
+        textAlign: 'center',
+        fontFamily: fonts.regular
     },
     input: {
         borderWidth: 1,
-        borderColor: "#ccc",
+        borderColor: colors.subtle,
         padding: 10,
         borderRadius: 8,
         marginTop: 10,
@@ -42,6 +49,12 @@ export const styles = StyleSheet.create({
         justifyContent: "space-between"
     },
     date_cell: {
-        width: "45%"
+        width: "48%"
+    },
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8
     }
 })

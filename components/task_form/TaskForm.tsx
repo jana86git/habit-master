@@ -1,6 +1,9 @@
+import { colors } from "@/constants/colors";
+import { fonts } from "@/constants/fonts";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
-import { Button, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
+import Button3D from "../button_3d/Button3D";
 import TextInputComponent from "../text_input/TextInput";
 import { useTaskForm } from "./TaskFormContext";
 import { styles } from "./styles";
@@ -31,7 +34,7 @@ export default function TaskForm() {
 
   return (
     <View style={styles.container}>
-     
+
 
       {/* Task Name */}
       <TextInputComponent
@@ -45,15 +48,19 @@ export default function TaskForm() {
 
       {/* Date, Reminder, Points, Category (same as before) */}
       {/* ... keep previous fields ... */}
-{/* Date Selections */}
+      {/* Date Selections */}
       <View>
         <Text style={styles.subTitle}>Date Selections</Text>
       </View>
       <View style={styles.dateWrapper}>
         <View style={styles.date_cell}>
           {/* Start Date */}
-          <Button title="Select Start Date" onPress={() => setShowStartDate(true)} />
-          <Text style={styles.label}>
+          <Button3D onClick={() => setShowStartDate(true)}>
+            <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+              <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>Start Date</Text>
+            </View>
+          </Button3D>
+          <Text style={styles.selectedDate}>
             {state.startDate.toLocaleDateString("en-GB")}
           </Text>
           {showStartDate && (
@@ -70,13 +77,14 @@ export default function TaskForm() {
         </View>
         <View style={styles.date_cell}>
           {/* End Date */}
-          <Button title="Select End Date" onPress={() => setShowEndDate(true)} />
-          <Text style={styles.label}>
-            {state.endDate ? state.endDate.toLocaleDateString("en-GB") : "No end date selected"}
+          <Button3D onClick={() => setShowEndDate(true)}>
+            <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+              <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>End Date</Text>
+            </View>
+          </Button3D>
+          <Text style={styles.selectedDate}>
+            {state.endDate?.toLocaleDateString("en-GB")}
           </Text>
-          <TouchableOpacity onPress={() => dispatch({ type: "SET_END_DATE", payload: null })}>
-            <Text style={styles.label}>Clear End Date</Text>
-          </TouchableOpacity>
           {showEndDate && (
             <DateTimePicker
               value={state.endDate || new Date()}
@@ -94,7 +102,11 @@ export default function TaskForm() {
       {/* Reminder Time */}
       <View>
         <Text style={styles.subTitle}>Remind Me At:</Text>
-        <Button title="Select Time" onPress={() => setShowReminder(true)} />
+        <Button3D onClick={() => setShowReminder(true)}>
+          <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+            <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>Select Time</Text>
+          </View>
+        </Button3D>
         {state.reminderTime && (
           <Text style={styles.label}>{state.reminderTime.toLocaleTimeString("en-GB")}</Text>
         )}
@@ -149,7 +161,7 @@ export default function TaskForm() {
           label="Subtask Name"
           value={subtaskName}
           onChangeText={setSubtaskName}
-         
+
         />
         <TextInputComponent
           placeholder="Points"
@@ -157,9 +169,13 @@ export default function TaskForm() {
           value={subtaskPoint}
           onChangeText={setSubtaskPoint}
           keyboardType="numeric"
-          
+
         />
-        <Button title="Add Subtask" onPress={addSubtask} />
+        <Button3D onClick={addSubtask}>
+          <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+            <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>Add Subtask</Text>
+          </View>
+        </Button3D>
 
         {state.subtasks.map((item, index) => (
           <View key={index} style={styles?.subtask_card} >
@@ -167,13 +183,13 @@ export default function TaskForm() {
               {item.name} - {item.point} pts
             </Text>
             <TouchableOpacity onPress={() => removeSubtask(index)}>
-              <Text style={{ color: "red" }}>Remove</Text>
+              <Text style={{ color: colors.danger }}>Remove</Text>
             </TouchableOpacity>
           </View>
         ))}
       </View>
 
-   
+
     </View>
   );
 }

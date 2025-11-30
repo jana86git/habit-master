@@ -203,7 +203,7 @@ export default function HabitList() {
                                 <View style={styles.categoryBadge}>
                                     <Ionicons
                                         name={getCategoryIcon(habit.category)}
-                                        size={14}
+                                        size={10}
                                         color={colors.textOnPrimary}
                                         style={styles.categoryIcon}
                                     />
@@ -457,9 +457,9 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: colors.primary,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
         alignSelf: "flex-start",
         gap: 4,
     },
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     },
     categoryText: {
         fontFamily: getFontFamily('bold'),
-        fontSize: 11,
+        fontSize: 10,
         color: colors.textOnPrimary,
         textTransform: "uppercase",
         letterSpacing: 0.5,
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
         paddingHorizontal: 10,
         paddingVertical: 6,
-        borderRadius: 16,
+        borderRadius: 4,
         gap: 4,
         borderWidth: 1,
         borderColor: colors.buttonOrange,
@@ -491,12 +491,13 @@ const styles = StyleSheet.create({
     },
     footerRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
+        justifyContent: "center",
         alignItems: "center",
-        marginTop: 8,
-        paddingTop: 8,
+        marginTop: 4,
+        paddingTop: 4,
         borderTopWidth: 1,
         borderTopColor: `${colors.subtle}20`,
+        gap: 16,
     },
     infoItem: {
         flexDirection: "row",

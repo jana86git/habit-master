@@ -1,10 +1,14 @@
 import { useHome } from "@/app/home";
+import { colors } from "@/constants/colors";
 import { router } from "expo-router";
 import { useCallback, useEffect } from "react";
-import { Button, DeviceEventEmitter, Dimensions, View } from "react-native";
-import { BottomSheet } from "../bottom_sheet/BottomSheet";
+import { DeviceEventEmitter, Dimensions, Text, View } from "react-native";
+import Button3D from "../button_3d/Button3D";
 import RadioButton from "../radio_button/RadioButton";
+import WindowModal from "../window_modal/WindowModal";
+
 const eventEmitter = DeviceEventEmitter;
+
 export default function CreateOptionPopup() {
 
    const { state, dispatch } = useHome();
@@ -22,7 +26,7 @@ export default function CreateOptionPopup() {
 
    useEffect(() => {
       const footerIconClickEvent = eventEmitter.addListener('footer-icon-click', (event: any) => {
-        
+
          if (event?.title === "Add") {
             dispatch({ type: "SHOW_CREATE_OPTION", payload: true })
          }
@@ -35,8 +39,8 @@ export default function CreateOptionPopup() {
 
 
    return (
-      <BottomSheet onClose={() => { dispatch({ type: "SHOW_CREATE_OPTION", payload: false }) }} visible={openCreateOption} heading="What Do You Want To Create?" >
-         <View style={{ height: height * 0.3 }}>
+      <WindowModal onClose={() => { dispatch({ type: "SHOW_CREATE_OPTION", payload: false }) }} visible={openCreateOption} label="Create:" >
+         <View style={{ height: height * 0.3, padding: 8 }}>
             <View style={{ gap: 16, marginTop: 20 }}>
                {createOptions.map((option) => (
                   <RadioButton
@@ -48,9 +52,13 @@ export default function CreateOptionPopup() {
                   />
                ))}
 
-               <Button title="Next" onPress={handleNext} />
+               <Button3D onClick={handleNext}>
+                  <View style={{ width: "80%", alignItems: "center", paddingVertical: 8 }}>
+                     <Text style={{ color: colors.textOnPrimary }}>Next</Text>
+                  </View>
+               </Button3D>
             </View>
          </View>
-      </BottomSheet>
+      </WindowModal>
    )
 }

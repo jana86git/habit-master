@@ -4,30 +4,32 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     Animated,
+    Modal,
     PanResponder,
     ScrollView,
-    ScrollViewProps,
     StyleSheet,
     Text,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View,
     ViewStyle,
 } from 'react-native';
 
-interface WindowScrollviewProps extends ScrollViewProps {
+interface WindowModalProps {
     children: React.ReactNode;
-    style?: ViewStyle;
-    contentContainerStyle?: ViewStyle;
+    visible: boolean;
+    onClose?: () => void;
     label?: string;
+    style?: ViewStyle;
 }
 
-export default function WindowScrollview({
+export default function WindowModal({
     children,
+    visible,
+    onClose,
+    label = 'Modal',
     style,
-    contentContainerStyle,
-    label = 'label',
-    ...props
-}: WindowScrollviewProps) {
+}: WindowModalProps) {
     const [contentHeight, setContentHeight] = useState(1);
     const [containerHeight, setContainerHeight] = useState(1);
 
@@ -47,7 +49,7 @@ export default function WindowScrollview({
     const scrollableHeight = contentHeight - containerHeight;
     const trackScrollableHeight = containerHeight - thumbHeight;
 
-    // Refs for dimensions to be used in PanResponder without re-binding
+    // Refs for dimensions
     const dimensions = useRef({ contentHeight: 1, containerHeight: 1, scrollableHeight: 1, trackScrollableHeight: 1 });
 
     useEffect(() => {
@@ -73,13 +75,8 @@ export default function WindowScrollview({
                 const { scrollableHeight, trackScrollableHeight } = dimensions.current;
                 if (trackScrollableHeight <= 0 || scrollableHeight <= 0) return;
 
-                // Calculate ratio: how much content moves per pixel of thumb movement
                 const ratio = scrollableHeight / trackScrollableHeight;
-
-                // Calculate new offset
                 const newOffset = startOffset.current + gestureState.dy * ratio;
-
-                // Clamp
                 const clampedOffset = Math.max(0, Math.min(newOffset, scrollableHeight));
 
                 scrollViewRef.current?.scrollTo({ y: clampedOffset, animated: false });
@@ -87,7 +84,6 @@ export default function WindowScrollview({
         })
     ).current;
 
-    // Interpolate scrollY to thumb position
     const scrollIndicatorPosition = scrollY.interpolate({
         inputRange: [0, Math.max(1, scrollableHeight)],
         outputRange: [0, Math.max(1, trackScrollableHeight)],
@@ -95,72 +91,101 @@ export default function WindowScrollview({
     });
 
     return (
-        <View style={[styles.outerContainer, style]}>
-            {/* Header Bar */}
-            <View style={styles.headerBar}>
-                <Text style={styles.headerLabel}>{label}</Text>
-                <View style={styles.headerButtons}>
-                    <TouchableOpacity style={styles.headerButton}>
-                        <View style={styles.buttonCircle} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerButton}>
-                        <View style={styles.buttonCircle} />
-                    </TouchableOpacity>
-                </View>
-            </View>
+        <Modal
+            transparent
+            visible={visible}
+            animationType="fade"
 
-            {/* Content Area */}
-            <View style={[styles.container, { paddingRight: contentHeight > containerHeight ? 20 : 0 }]}>
-                <Animated.ScrollView
-                    {...props}
-                    ref={scrollViewRef}
-                    style={styles.scrollView}
-                    contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
-                    onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
-                    onContentSizeChange={(w, h) => setContentHeight(h)}
-                    onScroll={Animated.event(
-                        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                        { useNativeDriver: false }
-                    )}
-                    scrollEventThrottle={16}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {children}
-                </Animated.ScrollView>
+            onRequestClose={onClose}
+        >
+            <TouchableOpacity
+                style={styles.overlay}
+                activeOpacity={1}
+                onPress={onClose}
+            >
+                <TouchableWithoutFeedback>
+                    <View style={[styles.windowContainer, style]}>
+                        {/* Header Bar */}
+                        <View style={styles.headerBar}>
+                            <Text style={styles.headerLabel}>
+                                {label.length > 16 ? `${label.substring(0, 16)}...` : label}
+                            </Text>
+                            <View style={styles.headerButtons}>
+                                <TouchableOpacity style={styles.headerButton} onPress={onClose}>
+                                    <MaterialCommunityIcons name="close" size={24} color={colors.textOnPrimary} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
 
-                {contentHeight > containerHeight && (
-                    <View style={styles.track}>
-                        <Animated.View
-                            {...panResponder.panHandlers}
-                            style={[
-                                styles.thumb,
-                                {
-                                    height: thumbHeight,
-                                    transform: [{ translateY: scrollIndicatorPosition }],
-                                },
-                            ]}
-                        >
-                            <MaterialCommunityIcons name="drag-vertical" size={16} color={colors.textOnPrimary} />
-                        </Animated.View>
+                        {/* Content Area */}
+                        <View style={[styles.container, { paddingRight: contentHeight > containerHeight ? 20 : 0 }]}>
+                            <Animated.ScrollView
+                                ref={scrollViewRef}
+                                style={styles.scrollView}
+                                contentContainerStyle={styles.contentContainer}
+                                onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
+                                onContentSizeChange={(w, h) => setContentHeight(h)}
+                                onScroll={Animated.event(
+                                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                                    { useNativeDriver: false }
+                                )}
+                                scrollEventThrottle={16}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                {children}
+                            </Animated.ScrollView>
+
+                            {contentHeight > containerHeight && (
+                                <View style={styles.track}>
+                                    <Animated.View
+                                        {...panResponder.panHandlers}
+                                        style={[
+                                            styles.thumb,
+                                            {
+                                                height: thumbHeight,
+                                                transform: [{ translateY: scrollIndicatorPosition }],
+                                            },
+                                        ]}
+                                    >
+                                        <MaterialCommunityIcons name="drag-vertical" size={16} color={colors.textOnPrimary} />
+                                    </Animated.View>
+                                </View>
+                            )}
+                        </View>
                     </View>
-                )}
-            </View>
-        </View>
+                </TouchableWithoutFeedback>
+            </TouchableOpacity>
+        </Modal>
     );
 }
 
 const styles = StyleSheet.create({
-    outerContainer: {
+    overlay: {
         flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    windowContainer: {
+        width: '95%',
+        minHeight: '40%',
+        maxHeight: '70%',
         borderWidth: 4,
-        borderColor: colors.primary,
+        borderColor: colors.secondary,
         borderRadius: 0,
-        overflow: 'hidden',
-        backgroundColor: colors.primary,
+        backgroundColor: colors.background,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     headerBar: {
         height: 36,
-        backgroundColor: colors.primary,
+        backgroundColor: colors.secondary,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -169,11 +194,10 @@ const styles = StyleSheet.create({
     headerLabel: {
         fontFamily: fonts.regular,
         color: colors.textOnPrimary,
-        fontSize: 20,
+        fontSize: 16,
     },
     headerButtons: {
         flexDirection: 'row',
-
     },
     headerButton: {
         width: 24,
@@ -188,13 +212,14 @@ const styles = StyleSheet.create({
         backgroundColor: colors.textOnPrimary,
     },
     container: {
-        flex: 1,
+        flexShrink: 1,
         position: 'relative',
         backgroundColor: colors.background,
         overflow: 'hidden',
     },
     scrollView: {
-        flex: 1,
+        flexGrow: 0,
+        flexShrink: 1,
     },
     contentContainer: {
         padding: 4,
@@ -204,7 +229,7 @@ const styles = StyleSheet.create({
         right: 0,
         top: 4,
         bottom: 4,
-        width: 20, // Fixed width
+        width: 20,
         borderRadius: 10,
         backgroundColor: 'rgba(0,0,0,0.05)',
         alignItems: 'center',

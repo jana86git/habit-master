@@ -1,3 +1,4 @@
+import Button3D from "@/components/button_3d/Button3D";
 import TaskForm from "@/components/task_form/TaskForm";
 import TaskFormProvider, { useTaskForm } from "@/components/task_form/TaskFormContext";
 import { InitialState, Subtask, TaskResponse } from "@/components/task_form/types";
@@ -5,11 +6,12 @@ import { colors } from "@/constants/colors";
 import { emitError } from "@/constants/emitError";
 import { emitTasksRefetch } from "@/constants/emitRefetch";
 import { emitSuccess } from "@/constants/emitSuccess";
+import { fonts } from "@/constants/fonts";
 import { createOneTimeReminder, deleteReminder } from "@/constants/notificationAndroid";
 import { db } from "@/db/db";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Button, View } from "react-native";
+import { Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import uuid from "react-native-uuid";
 
@@ -172,10 +174,10 @@ function SubmitButton() {
 
     if (reminderTime) {
 
-      if(reminder_event_id){
+      if (reminder_event_id) {
         await deleteReminder(reminder_event_id);
       }
-      
+
 
       // Build final reminder date = endDate + reminderTime
       const finalNotificationDate = new Date(endDate);
@@ -187,7 +189,7 @@ function SubmitButton() {
 
       // Schedule notification
       const event_data = await createOneTimeReminder(
-       "Task Reminder:",
+        "Task Reminder:",
         taskName,
         finalNotificationDate
       );
@@ -257,7 +259,11 @@ function SubmitButton() {
 
   return (
     <View style={{ padding: 16 }}>
-      <Button disabled={loading} title={loading ? "Updating..." : "Update Task"} onPress={updateTask} />
+      <Button3D disabled={loading} onClick={updateTask}>
+        <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+          <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>{loading ? "Updating..." : "Update Task"}</Text>
+        </View>
+      </Button3D>
     </View>
   );
 }

@@ -1,14 +1,22 @@
 import { Action, InitialState } from "./types";
+
+// Helper function to get date 2 days from now
+const getTwoDaysFromNow = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + 2);
+  return date;
+};
+
 export const initialState: InitialState = {
-    taskName:"",
-    startDate:new Date(),
-    endDate:null,
-    reminderTime: null,
-    taskPoint:5,
-    negativeTaskPoint:3,
-    category: null,
-    subtasks: [],
-    reminder_event_id: null
+  taskName: "",
+  startDate: new Date(),
+  endDate: getTwoDaysFromNow(),
+  reminderTime: null,
+  taskPoint: 5,
+  negativeTaskPoint: 3,
+  category: null,
+  subtasks: [],
+  reminder_event_id: null
 }
 export function reducer(state: InitialState, action: Action): InitialState {
   switch (action.type) {
