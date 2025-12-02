@@ -3,24 +3,24 @@ import { useGrowth } from "@/components/growths/GrowthProvider";
 import { colors } from "@/constants/colors";
 import { db } from "@/db/db";
 import React, { useEffect } from "react";
-import { Dimensions, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Text, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { styles } from "./styles";
 import { DBRow } from "./types";
 export function GrowthChart() {
-    const {state,dispatch} = useGrowth();
+    const { state, dispatch } = useGrowth();
     const groupedData = state.groupedData;
     const roundedMax = state.roundedMax;
     const roundedMin = state.roundedMin;
     const filter = state.filter;
-  
+
 
     const width = Dimensions.get("window").width;
     const height = Dimensions.get("window").height;
     const totalGroups = 20;
 
     // ✅ FORMAT DATE (YYYY-MM-DD)
-    const format = (d: Date) => d.toISOString().split("T")[0]; 
+    const format = (d: Date) => d.toISOString().split("T")[0];
 
     // ✅ DETERMINE DATE RANGE BASED ON FILTER
     const getFilterSQL = () => {
@@ -66,12 +66,12 @@ export function GrowthChart() {
             );
 
             console.log("COUNT: ", count);
-            if(!count) return;
+            if (!count) return;
 
             const totalRows = count.total ?? 0;
             if (totalRows === 0) {
                 // setGroupedData([]);
-                dispatch({type: "SET_GROUPED_DATA", payload: []});
+                dispatch({ type: "SET_GROUPED_DATA", payload: [] });
                 return;
             }
 
@@ -132,8 +132,8 @@ export function GrowthChart() {
 
             console.log("Formatted data: ", formatted)
 
-           
-            dispatch({type: "SET_GROUPED_DATA", payload: formatted});
+
+            dispatch({ type: "SET_GROUPED_DATA", payload: formatted });
 
             const values = formatted.map((d) => Math.round(d.value));
             const maxVal = Math.max(...values);
@@ -141,21 +141,21 @@ export function GrowthChart() {
 
             console.log(maxVal, minVal)
 
-          
+
 
             if (minVal < 0) {
                 const maxAbsolute = Math.max(Math.abs(maxVal), Math.abs(minVal));
-               
 
-               
 
-            
-                dispatch({type: "SET_ROUNDED_MAX", payload: maxAbsolute});
-                dispatch({type: "SET_ROUNDED_MIN", payload: -maxAbsolute});
+
+
+
+                dispatch({ type: "SET_ROUNDED_MAX", payload: maxAbsolute });
+                dispatch({ type: "SET_ROUNDED_MIN", payload: -maxAbsolute });
             } else {
-             
-                dispatch({type: "SET_ROUNDED_MAX", payload: Math.ceil(maxVal)});
-                dispatch({type: "SET_ROUNDED_MIN", payload: 0});
+
+                dispatch({ type: "SET_ROUNDED_MAX", payload: Math.ceil(maxVal) });
+                dispatch({ type: "SET_ROUNDED_MIN", payload: 0 });
             }
         } catch (error) {
             console.error("Error fetching grouped completions:", error);
@@ -168,78 +168,51 @@ export function GrowthChart() {
     }, [filter]);
 
     return (
-        <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-            <View style={styles.container}>
-                <Text style={styles.title}>Growth Map</Text>
-
-                {/* ✅ FILTER GRID */}
-                <View style={styles.filterGrid}>
-                    {["today", "last_7_days", "last_month", "last_365_days", "all"].map((f) => (
-                        <TouchableOpacity
-                            key={f}
-                            style={[
-                                styles.filterItem,
-                                filter === f && styles.filterItemActive
-                            ]}
-                            onPress={() => dispatch({ type: "SET_FILTER", payload: f })}
-                        >
-                            <Text
-                                style={{
-                                    color: filter === f ? "white" : "black",
-                                    fontWeight: "600",
-                                }}
-                            >
-                                {f.replace(/_/g, " ")}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                {groupedData.length > 0 ? (
-                    <LineChart
-                        data={groupedData}
-                        width={(width * 90) / 100}
-                        height={roundedMin < 0 ? 100 : 300}
-                        spacing={Math.round((width - 40) / totalGroups)}
-                        color="#FF3B30"
-                        hideYAxisText
-                        thickness={3}
-                        startFillColor="rgba(255, 59, 48, 0.3)"
-                        endFillColor="rgba(255, 59, 48, 0.01)"
-                        startOpacity={0.9}
-                        endOpacity={0.2}
-                        initialSpacing={0}
-                        maxValue={roundedMax}
-                        mostNegativeValue={roundedMin}
-                        yAxisColor="#ccc"
-                        yAxisThickness={1}
-                        yAxisOffset={2}
-                        hideRules
-                        thickness1={1}
-                        rulesType="dashed"
-                        rulesColor="#ccc"
-                        yAxisTextStyle={{ color: colors.text }}
-                        xAxisColor="#ccc"
-                        xAxisThickness={1}
-                        xAxisLabelTextStyle={{ color: colors.text, fontSize: 14, display: "none" }}
-                        dataPointsColor="#FF3B30"
-                        xAxisTextNumberOfLines={3}
-                        dataPointsRadius={1}
-                        textColor={colors.text}
-                        textFontSize={8}
-                        areaChart
-                        curved
-                    />
-                ) : (
-                    <Text style={{ color: "gray", marginTop: 20 }}>
-                        No completion data available.
-                    </Text>
-                )}
-
-                <Text>
-                    {groupedData[0]?.label} - {groupedData[groupedData.length - 1]?.label}
+        <View style={styles.container}>
+            {groupedData.length > 0 ? (
+                <LineChart
+                    data={groupedData}
+                    width={(width * 90) / 100}
+                    height={roundedMin < 0 ? 100 : 300}
+                    spacing={Math.round((width - 40) / totalGroups)}
+                    color="#FF3B30"
+                    hideYAxisText
+                    thickness={3}
+                    startFillColor="rgba(255, 59, 48, 0.3)"
+                    endFillColor="rgba(255, 59, 48, 0.01)"
+                    startOpacity={0.9}
+                    endOpacity={0.2}
+                    initialSpacing={0}
+                    maxValue={roundedMax}
+                    mostNegativeValue={roundedMin}
+                    yAxisColor="#ccc"
+                    yAxisThickness={1}
+                    yAxisOffset={2}
+                    hideRules
+                    thickness1={1}
+                    rulesType="dashed"
+                    rulesColor="#ccc"
+                    yAxisTextStyle={{ color: colors.text }}
+                    xAxisColor="#ccc"
+                    xAxisThickness={1}
+                    xAxisLabelTextStyle={{ color: colors.text, fontSize: 14, display: "none" }}
+                    dataPointsColor="#FF3B30"
+                    xAxisTextNumberOfLines={3}
+                    dataPointsRadius={1}
+                    textColor={colors.text}
+                    textFontSize={8}
+                    areaChart
+                    curved
+                />
+            ) : (
+                <Text style={{ color: "gray", marginTop: 20 }}>
+                    No completion data available.
                 </Text>
-            </View>
-        </ScrollView>
+            )}
+
+            <Text>
+                {groupedData[0]?.label} - {groupedData[groupedData.length - 1]?.label}
+            </Text>
+        </View>
     );
 }

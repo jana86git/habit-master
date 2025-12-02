@@ -258,10 +258,12 @@ function SubmitButton() {
   }
 
   return (
-    <View style={{ padding: 16 }}>
-      <Button3D disabled={loading} onClick={updateTask}>
-        <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
-          <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>{loading ? "Updating..." : "Update Task"}</Text>
+    <View style={{ width: '100%', paddingVertical: 6 }}>
+      <Button3D disabled={loading} onClick={updateTask} style={{ width: '100%' }}>
+        <View style={{ paddingHorizontal: 40, paddingVertical: 12 }}>
+          <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>
+            {loading ? "Updating..." : "Update"}
+          </Text>
         </View>
       </Button3D>
     </View>

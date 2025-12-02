@@ -1,3 +1,4 @@
+import Button3D from "@/components/button_3d/Button3D";
 import HabitForm from "@/components/habit_form/HabitForm";
 import HabitFormProvider, { useHabitForm } from "@/components/habit_form/HabitFormContext";
 import { HabitResponse } from "@/components/habit_form/types";
@@ -5,11 +6,12 @@ import { colors } from "@/constants/colors";
 import { emitError } from "@/constants/emitError";
 import { emitHabitRefetch } from "@/constants/emitRefetch";
 import { emitSuccess } from "@/constants/emitSuccess";
+import { fonts } from "@/constants/fonts";
 import { createRecurringEventAndroid, deleteReminder } from "@/constants/notificationAndroid";
 import { db } from "@/db/db";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Button, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 export default function EditHabit() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -267,6 +269,14 @@ function UpdateButton({ habitId }: { habitId: string }) {
 
 
   return (
-    <Button disabled={loading} title={loading ? "Updating..." : "Update"} onPress={updateHabit} />
+    <View style={{ width: '100%', paddingVertical: 6 }}>
+      <Button3D disabled={loading} onClick={updateHabit} style={{ width: '100%' }}>
+        <View style={{ paddingHorizontal: 40, paddingVertical: 12 }}>
+          <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>
+            {loading ? "Updating..." : "Update"}
+          </Text>
+        </View>
+      </Button3D>
+    </View>
   );
 }

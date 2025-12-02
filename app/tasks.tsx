@@ -1,10 +1,11 @@
 import { Subtask, TaskWithSubtask } from "@/components/task_form/types";
+import WindowPanel, { ActionIcon } from "@/components/window_panel/WindowPanel";
 import { colors } from "@/constants/colors";
 import { emitError } from "@/constants/emitError";
 import { eventEmitter } from "@/constants/eventEmitter";
+import { fonts } from "@/constants/fonts";
 import { db } from "@/db/db";
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -13,7 +14,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 
 
@@ -115,104 +116,108 @@ export default function Tasks() {
     const renderItem = ({ item }: { item: TaskWithSubtask }) => {
         const subtasks: Subtask[] = item.subtasks || [];
 
+        const actionIcons: ActionIcon[] = [
+            {
+                name: 'create-outline',
+                onPress: () => router.push({
+                    pathname: '/EditTask',
+                    params: { id: item.id }
+                }),
+                size: 20,
+            },
+            {
+                name: 'trash-outline',
+                onPress: () => handleDeleteTask(item.id),
+                size: 20,
+            },
+        ];
+
         return (
-            <TouchableOpacity
-                style={styles.itemContainer}
+            <WindowPanel
+                title={item.task_name}
+                actionIcons={actionIcons}
                 onPress={() => Alert.alert(item.task_name)}
             >
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.taskName}>{item.task_name}</Text>
+                {/* Full Task Name */}
+                <Text style={styles.taskName}>{item.task_name}</Text>
 
-                    <View style={styles.row}>
-                        <Ionicons
-                            name="calendar-outline"
-                            size={16}
-                            color={colors.info}
-                            style={styles.icon}
-                        />
-                        <Text style={styles.taskDetails}>
-                            Start: {new Date(item.start_date).toLocaleDateString()}
-                        </Text>
-                    </View>
-                    {item?.end_date && <View style={styles.row}>
-                        <Ionicons
-                            name="calendar-outline"
-                            size={16}
-                            color={colors.info}
-                            style={styles.icon}
-                        />
-                        <Text style={styles.taskDetails}>
-                            End: {new Date(item.end_date).toLocaleDateString()}
-                        </Text>
-                    </View>}
+                <View style={styles.row}>
+                    <Ionicons
+                        name="calendar-outline"
+                        size={16}
+                        color={colors.info}
+                        style={styles.icon}
+                    />
+                    <Text style={styles.taskDetails}>
+                        Start: {new Date(item.start_date).toLocaleDateString()}
+                    </Text>
+                </View>
+                {item?.end_date && <View style={styles.row}>
+                    <Ionicons
+                        name="calendar-outline"
+                        size={16}
+                        color={colors.info}
+                        style={styles.icon}
+                    />
+                    <Text style={styles.taskDetails}>
+                        End: {new Date(item.end_date).toLocaleDateString()}
+                    </Text>
+                </View>}
 
-                    <View style={styles.row}>
-                        <FontAwesome5
-                            name="bullseye"
-                            size={16}
-                            color={colors.info}
-                            style={styles.icon}
-                        />
-                        <Text style={styles.taskDetails}>
-                            Task Points: {item.task_point} | Negative Points:{" "}
-                            {item.negative_task_point}
-                        </Text>
-                    </View>
+                <View style={styles.row}>
+                    <FontAwesome5
+                        name="bullseye"
+                        size={16}
+                        color={colors.info}
+                        style={styles.icon}
+                    />
+                    <Text style={styles.taskDetails}>
+                        P: {item.task_point} | NP:{" "}
+                        {item.negative_task_point}
+                    </Text>
+                </View>
 
-                    {subtasks.length > 0 && (
-                        <View style={{ marginTop: 8 }}>
-                            <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
-                                Subtasks:
-                            </Text>
+                {subtasks.length > 0 && (
+                    <View style={styles.subtasksContainer}>
+                        <WindowPanel title="Subtasks">
                             {subtasks.map(
                                 (subtask) =>
                                     subtask.name && (
                                         <View
                                             key={subtask.id}
-                                            style={{ flexDirection: "row", alignItems: "center" }}
+                                            style={styles.subtaskItemContainer}
                                         >
-                                            <View style={styles.subtaskRow}>
-                                                <Text style={styles.subtaskName}>
-                                                    • {subtask.name}
-                                                </Text>
-                                                <Text style={styles.subtaskPoint}>
-                                                    {subtask.point} pts
-                                                </Text>
+                                            {/* Subtask Title */}
+                                            <Text style={styles.subtaskName}>
+                                                {subtask.name}
+                                            </Text>
+
+                                            {/* Points Badge and Delete Button Row */}
+                                            <View style={styles.subtaskActionsRow}>
+                                                <View style={styles.subtaskPointsBadge}>
+                                                    <Ionicons name="star" size={12} color={colors.buttonOrange} />
+                                                    <Text style={styles.subtaskPointsText}>
+                                                        {subtask.point}
+                                                    </Text>
+                                                </View>
+                                                <TouchableOpacity
+                                                    onPress={() => handleDeleteSubtask(subtask.id)}
+                                                    style={styles.subtaskDeleteButton}
+                                                >
+                                                    <Ionicons
+                                                        name="trash-outline"
+                                                        size={18}
+                                                        color={colors.danger}
+                                                    />
+                                                </TouchableOpacity>
                                             </View>
-                                            <TouchableOpacity
-                                                onPress={() => handleDeleteSubtask(subtask.id)}
-                                                style={styles.deleteButton}
-                                            >
-                                                <Ionicons
-                                                    name="trash-outline"
-                                                    size={18}
-                                                    color={colors.danger}
-                                                />
-                                            </TouchableOpacity>
                                         </View>
                                     )
                             )}
-                        </View>
-                    )}
-                </View>
-
-                <TouchableOpacity
-                    onPress={() => handleDeleteTask(item.id)}
-                    style={styles.deleteButton}
-                >
-                    <Ionicons name="trash-outline" size={24} color={colors.danger} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={() => router.push({
-                        pathname: '/EditTask',
-                        params: { id: item.id }
-                    })}
-
-                    style={styles.deleteButton}
-                >
-                    <FontAwesome6 name="edit" size={24} color={colors.primary} />
-                </TouchableOpacity>
-            </TouchableOpacity>
+                        </WindowPanel>
+                    </View>
+                )}
+            </WindowPanel>
         );
     };
 
@@ -220,23 +225,23 @@ export default function Tasks() {
         fetchTasks();
     }, []);
 
-     useEffect(() => {
-            // subscribe to the habit refetch
+    useEffect(() => {
+        // subscribe to the habit refetch
 
-            async function handleTaskRefetch() {
-                await fetchTasks();
-            }
-    
-    
-    
-            eventEmitter.on('task-refetch', handleTaskRefetch);
-    
-    
-            return () => {
-                eventEmitter.off('task-refetch', handleTaskRefetch);
-    
-            };
-        }, []);
+        async function handleTaskRefetch() {
+            await fetchTasks();
+        }
+
+
+
+        eventEmitter.on('task-refetch', handleTaskRefetch);
+
+
+        return () => {
+            eventEmitter.off('task-refetch', handleTaskRefetch);
+
+        };
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -245,7 +250,7 @@ export default function Tasks() {
                 keyExtractor={(item) => item.id}
                 renderItem={renderItem}
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
-                contentContainerStyle={{ padding: 16 }}
+                contentContainerStyle={{ padding: 2 }}
             />
         </View>
     );
@@ -253,24 +258,61 @@ export default function Tasks() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    itemContainer: {
-        flexDirection: "row",
-        padding: 12,
-        backgroundColor: colors.background,
-        borderRadius: 8,
+    taskName: {
+        fontSize: 16,
+        fontFamily: fonts.bold,
+        color: colors.text,
+        marginBottom: 8,
     },
-    taskName: { fontSize: 16, fontWeight: "bold", marginBottom: 4, color: colors.text },
-    taskDetails: { fontSize: 14, color: colors.info },
+    taskDetails: { fontSize: 14, color: colors.info, fontFamily: fonts.regular },
     row: { flexDirection: "row", alignItems: "center", marginTop: 4 },
     icon: { marginRight: 6 },
-    subtaskRow: {
-        flex: 1,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingLeft: 12,
+    subtasksContainer: {
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: colors.secondary + '40',
     },
-    subtaskName: { fontSize: 14, color: colors.text },
-    subtaskPoint: { fontSize: 14, color: colors.info },
-    deleteButton: { justifyContent: "center", paddingLeft: 12 },
+    subtasksTitle: {
+        fontFamily: fonts.bold,
+        fontSize: 14,
+        color: colors.text,
+        marginBottom: 8,
+    },
+    subtaskItemContainer: {
+        marginBottom: 8,
+    },
+    subtaskName: {
+        fontSize: 14,
+        color: colors.text,
+        fontFamily: fonts.regular,
+        paddingLeft: 12,
+        marginBottom: 6,
+    },
+    subtaskActionsRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingLeft: 12,
+        gap: 8,
+    },
+    subtaskPointsBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: colors.background,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        gap: 4,
+        borderWidth: 1,
+        borderColor: colors.buttonOrange,
+    },
+    subtaskPointsText: {
+        fontFamily: fonts.bold,
+        fontSize: 12,
+        color: colors.text,
+    },
+    subtaskDeleteButton: {
+        padding: 4,
+    },
     separator: { height: 12 },
 });

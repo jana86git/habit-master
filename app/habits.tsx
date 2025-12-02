@@ -1,11 +1,13 @@
 import { styles } from "@/components/habbits/styles";
+import WindowPanel, { ActionIcon } from "@/components/window_panel/WindowPanel";
 import { colors } from "@/constants/colors";
 import { eventEmitter } from "@/constants/eventEmitter";
 import { db } from "@/db/db";
-import { FontAwesome5, FontAwesome6, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, FlatList, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Text, View } from "react-native";
+
 // Habit type
 interface Habit {
   id: string;
@@ -31,7 +33,7 @@ export default function Habits() {
 
   // Fetch habits
   async function fetchHabits(page = 1, limit = 10): Promise<void> {
-    if(!db) return;
+    if (!db) return;
     const offset = (page - 1) * limit;
     const query = `
       SELECT * FROM habits
@@ -50,9 +52,9 @@ export default function Habits() {
 
   // Delete habit
   async function deleteHabit(id: string): Promise<void> {
-    
+
     try {
-      if(!db) return;
+      if (!db) return;
       await db.runAsync(`DELETE FROM habits WHERE id = ?`, [id]);
       fetchHabits();
     } catch (error) {
@@ -64,62 +66,113 @@ export default function Habits() {
   useEffect(() => {
     fetchHabits();
   }, []);
-  useEffect(() => {
-              // subscribe to the habit refetch
-  
-              async function handleRefetch() {
-                  await fetchHabits();
-              }
-      
-      
-      
-              eventEmitter.on('habit-refetch', handleRefetch);
-      
-      
-              return () => {
-                  eventEmitter.off('habit-refetch', handleRefetch);
-      
-              };
-          }, []);
 
-  const renderItem = ({ item }: { item: Habit }) => (
-    <TouchableOpacity style={styles.itemContainer}  onPress={() => Alert.alert(item.habit_name)}>
-      <View style={{ flex: 1}}>
+  useEffect(() => {
+    // subscribe to the habit refetch
+
+    async function handleRefetch() {
+      await fetchHabits();
+    }
+
+    eventEmitter.on('habit-refetch', handleRefetch);
+
+    return () => {
+      eventEmitter.off('habit-refetch', handleRefetch);
+    };
+  }, []);
+
+  const renderItem = ({ item }: { item: Habit }) => {
+    const actionIcons: ActionIcon[] = [
+      {
+        name: 'create-outline',
+        onPress: () => router.push({
+          pathname: '/EditHabit',
+          params: { id: item.id }
+        }),
+        size: 20,
+      },
+      {
+        name: 'trash-outline',
+        onPress: () => deleteHabit(item.id),
+        size: 20,
+      },
+    ];
+
+    return (
+      <WindowPanel
+        title={item.habit_name}
+        actionIcons={actionIcons}
+        onPress={() => Alert.alert(item.habit_name)}
+      >
+        {/* Full Habit Name */}
         <Text style={styles.habitName}>{item.habit_name}</Text>
 
         <View style={styles.row}>
-          <Ionicons name="calendar-outline" size={16} color={colors.info} style={styles.icon} />
-          <Text style={styles.habitDetails}>Start: {new Date(item.start_date).toLocaleDateString()}</Text>
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color={colors.info}
+            style={styles.icon}
+          />
+          <Text style={styles.habitDetails}>
+            Start: {new Date(item.start_date).toLocaleDateString()}
+          </Text>
+        </View>
+
+        {item?.end_date && (
+          <View style={styles.row}>
+            <Ionicons
+              name="calendar-outline"
+              size={16}
+              color={colors.info}
+              style={styles.icon}
+            />
+            <Text style={styles.habitDetails}>
+              End: {new Date(item.end_date).toLocaleDateString()}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.row}>
+          <MaterialIcons
+            name="update"
+            size={16}
+            color={colors.info}
+            style={styles.icon}
+          />
+          <Text style={styles.habitDetails}>
+            Frequency: {item.frequency === "Repeat_Every_N_Days"
+              ? `Repeat Every ${item.n_days_frequency_rate} Days`
+              : item.frequency}
+          </Text>
         </View>
 
         <View style={styles.row}>
-          <MaterialIcons name="update" size={16} color={colors.info} style={styles.icon} />
-          <Text style={styles.habitDetails}>Frequency: {item.frequency==="Repeat_Every_N_Days" ? `Repeat Every ${item.n_days_frequency_rate} Days` :item.frequency}</Text>
-        </View>
-
-        <View style={styles.row}>
-          <FontAwesome5 name="bullseye" size={16} color={colors.info} style={styles.icon} />
+          <FontAwesome5
+            name="bullseye"
+            size={16}
+            color={colors.info}
+            style={styles.icon}
+          />
           <Text style={styles.habitDetails}>
             Target: {item.target_value} {item.target_unit || ""}
           </Text>
         </View>
-      </View>
 
-      <TouchableOpacity onPress={() => deleteHabit(item.id)} style={styles.deleteButton}>
-        <Ionicons name="trash-outline" size={24} color={colors.danger} />
-      </TouchableOpacity>
-       <TouchableOpacity
-                    onPress={() => router.push({
-                        pathname: '/EditHabit',
-                        params: { id: item.id }
-                    })}
-
-                    style={styles.deleteButton}
-                >
-                    <FontAwesome6 name="edit" size={24} color={colors.primary} />
-                </TouchableOpacity>
-    </TouchableOpacity>
-  );
+        <View style={styles.row}>
+          <FontAwesome5
+            name="bullseye"
+            size={16}
+            color={colors.info}
+            style={styles.icon}
+          />
+          <Text style={styles.habitDetails}>
+            Habit Points: {item.task_point} | Negative Points: {item.negative_task_point}
+          </Text>
+        </View>
+      </WindowPanel>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -128,10 +181,9 @@ export default function Habits() {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: 2 }}
       />
     </View>
   );
 }
-
 
