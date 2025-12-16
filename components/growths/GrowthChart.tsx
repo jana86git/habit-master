@@ -1,12 +1,10 @@
 
+import StockChart from "@/components/custom_chart/CustomChart";
 import { useGrowth } from "@/components/growths/GrowthProvider";
-import { colors } from "@/constants/colors";
 import { db } from "@/db/db";
 import React, { useEffect } from "react";
-import { Dimensions, Text, View } from "react-native";
-import { LineChart } from "react-native-gifted-charts";
-import { styles } from "./styles";
-import { DBRow } from "./types";
+import { View } from "react-native";
+
 export function GrowthChart() {
     const { state, dispatch } = useGrowth();
     const groupedData = state.groupedData;
@@ -14,10 +12,6 @@ export function GrowthChart() {
     const roundedMin = state.roundedMin;
     const filter = state.filter;
 
-
-    const width = Dimensions.get("window").width;
-    const height = Dimensions.get("window").height;
-    const totalGroups = 20;
 
     // ✅ FORMAT DATE (YYYY-MM-DD)
     const format = (d: Date) => d.toISOString().split("T")[0];
@@ -48,7 +42,7 @@ export function GrowthChart() {
 
         return {
             where: "WHERE DATE(log_date) >= DATE(?)",
-            params: [start],
+            params: [start.split("T")[0]],
         };
     };
 
@@ -59,101 +53,154 @@ export function GrowthChart() {
             // ✅ BUILD FILTER SQL
             const { where, params } = getFilterSQL();
 
-            // ✅ COUNT BASED ON FILTER
-            const count = await db.getFirstAsync<{ total: number }>(
+            // ✅ First, get the total count to determine if we need sampling
+            const countResult = await db.getFirstAsync<{ total: number }>(
                 `SELECT COUNT(*) as total FROM completions ${where}`,
                 params
             );
 
-            console.log("COUNT: ", count);
-            if (!count) return;
+            const totalRows = countResult?.total ?? 0;
 
-            const totalRows = count.total ?? 0;
             if (totalRows === 0) {
-                // setGroupedData([]);
                 dispatch({ type: "SET_GROUPED_DATA", payload: [] });
                 return;
             }
 
-            const groupSize = Math.ceil(totalRows / totalGroups);
+            const targetPoints = 15;
+            let rows: Array<{
+                log_date: string;
+                running_total: number;
+            }>;
 
-            // ✅ 2. Fetch grouped data (FILTER APPLIED)
-            const rows = await db.getAllAsync<DBRow>(
-                `
-                SELECT 
-                    group_id,
-                    SUM(point) AS totalValue,
-                    MIN(log_date) AS startLabel,
-                    MAX(log_date) AS endLabel
-                FROM (
+            if (totalRows <= targetPoints) {
+                // If we have 20 or fewer rows, fetch all with running totals
+                rows = await db.getAllAsync<{
+                    log_date: string;
+                    running_total: number;
+                }>(
+                    `
                     SELECT 
-                        *,
-                        CAST((ROW_NUMBER() OVER (ORDER BY log_date) - 1) / ? AS INTEGER) AS group_id
+                        log_date,
+                        SUM(point) OVER (
+                            ORDER BY log_date
+                            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+                        ) AS running_total
                     FROM completions
                     ${where}
-                )
-                GROUP BY group_id
-                ORDER BY group_id;
-                `,
-                [groupSize, ...params]
-            );
+                    ORDER BY log_date;
+                    `,
+                    params
+                );
+            } else {
+                // Use SQL to sample data into exactly 20 groups and pick the last row from each group
+                // UNION with the first and last rows to ensure they're always included
+                rows = await db.getAllAsync<{
+                    log_date: string;
+                    running_total: number;
+                }>(
+                    `
+                    WITH all_data AS (
+                        SELECT 
+                            log_date,
+                            SUM(point) OVER (
+                                ORDER BY log_date
+                                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+                            ) AS running_total
+                        FROM completions
+                        ${where}
+                    ),
+                    bucketed_data AS (
+                        SELECT 
+                            log_date,
+                            running_total,
+                            NTILE(${targetPoints}) OVER (ORDER BY log_date) AS bucket
+                        FROM all_data
+                    ),
+                    ranked_data AS (
+                        SELECT 
+                            log_date,
+                            running_total,
+                            bucket,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY bucket
+                                ORDER BY log_date DESC
+                            ) AS rn
+                        FROM bucketed_data
+                    ),
+                    sampled AS (
+                        SELECT log_date, running_total
+                        FROM ranked_data
+                        WHERE rn = 1
+                    ),
+                    first_row AS (
+                        SELECT log_date, running_total
+                        FROM all_data
+                        ORDER BY log_date ASC
+                        LIMIT 1
+                    ),
+                    last_row AS (
+                        SELECT log_date, running_total
+                        FROM all_data
+                        ORDER BY log_date DESC
+                        LIMIT 1
+                    )
+                    SELECT DISTINCT log_date, running_total
+                    FROM (
+                        SELECT * FROM first_row
+                        UNION
+                        SELECT * FROM sampled
+                        UNION
+                        SELECT * FROM last_row
+                    )
+                    ORDER BY log_date;
+                    `,
+                    params
+                );
+            }
 
-            let value = 0;
+            console.log("Rows fetched: ", rows);
 
-            // ✅ Create chart points
-            const formatted = rows.map((r) => {
-                value += r.totalValue;
+            // ✅ Create chart points directly from the SQL results
+            const sampledData = rows.map((r) => ({
+                value: Math.ceil(r.running_total),
+                label: r.log_date.split("T")[0],
+                dataPointText: Math.ceil(r.running_total).toString(),
+            }));
 
-                return {
-                    value: Math.ceil(value),
-                    label: r.startLabel.split("T")[0],
-                    dataPointText: Math.ceil(value).toString(),
-                };
-            });
-
-            // ✅ PADDING LOGIC (unchanged)
-            const lastDate = new Date(rows[rows.length - 1].endLabel);
+            // ✅ PADDING LOGIC - add one point for "today" if there's a gap
+            const lastDate = new Date(rows[rows.length - 1].log_date);
             const today = new Date();
             const diffDays = Math.max(
                 0,
                 Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
             );
 
-            for (let i = 1; i <= diffDays; i++) {
-                const d = new Date(lastDate);
-                d.setDate(lastDate.getDate() + i);
-
-                formatted.push({
-                    value,
+            const lastValue = sampledData[sampledData.length - 1].value;
+            if (diffDays > 0) {
+                // Only add one point for "today" if there's a gap
+                const d = new Date(today);
+                sampledData.push({
+                    value: lastValue,
                     label: d.toISOString().split("T")[0],
-                    dataPointText: String(Math.ceil(value)),
+                    dataPointText: String(lastValue),
                 });
             }
 
-            console.log("Formatted data: ", formatted)
+            console.log("Sampled data points: ", sampledData.length, sampledData);
 
+            dispatch({ type: "SET_GROUPED_DATA", payload: sampledData });
 
-            dispatch({ type: "SET_GROUPED_DATA", payload: formatted });
-
-            const values = formatted.map((d) => Math.round(d.value));
+            const values = sampledData.map((d) => Math.round(d.value));
             const maxVal = Math.max(...values);
             const minVal = Math.min(...values);
 
-            console.log(maxVal, minVal)
-
-
+            console.log("Max/Min values:", maxVal, minVal);
 
             if (minVal < 0) {
                 const maxAbsolute = Math.max(Math.abs(maxVal), Math.abs(minVal));
-
-
-
-
-
                 dispatch({ type: "SET_ROUNDED_MAX", payload: maxAbsolute });
                 dispatch({ type: "SET_ROUNDED_MIN", payload: -maxAbsolute });
             } else {
-
                 dispatch({ type: "SET_ROUNDED_MAX", payload: Math.ceil(maxVal) });
                 dispatch({ type: "SET_ROUNDED_MIN", payload: 0 });
             }
@@ -162,57 +209,29 @@ export function GrowthChart() {
         }
     }
 
+    async function fetchDebuggingCompletions() {
+        try {
+            if (!db) {
+                console.error("Database not initialized");
+                return;
+            }
+            const query = `SELECT * FROM completions`;
+            const rows = await db.getAllAsync(query);
+            console.log("Debugging completions: ", rows);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     // ✅ REFRESH ON FILTER CHANGE
     useEffect(() => {
         fetchCompletions();
+        fetchDebuggingCompletions();
     }, [filter]);
 
     return (
-        <View style={styles.container}>
-            {groupedData.length > 0 ? (
-                <LineChart
-                    data={groupedData}
-                    width={(width * 90) / 100}
-                    height={roundedMin < 0 ? 100 : 300}
-                    spacing={Math.round((width - 40) / totalGroups)}
-                    color="#FF3B30"
-                    hideYAxisText
-                    thickness={3}
-                    startFillColor="rgba(255, 59, 48, 0.3)"
-                    endFillColor="rgba(255, 59, 48, 0.01)"
-                    startOpacity={0.9}
-                    endOpacity={0.2}
-                    initialSpacing={0}
-                    maxValue={roundedMax}
-                    mostNegativeValue={roundedMin}
-                    yAxisColor="#ccc"
-                    yAxisThickness={1}
-                    yAxisOffset={2}
-                    hideRules
-                    thickness1={1}
-                    rulesType="dashed"
-                    rulesColor="#ccc"
-                    yAxisTextStyle={{ color: colors.text }}
-                    xAxisColor="#ccc"
-                    xAxisThickness={1}
-                    xAxisLabelTextStyle={{ color: colors.text, fontSize: 14, display: "none" }}
-                    dataPointsColor="#FF3B30"
-                    xAxisTextNumberOfLines={3}
-                    dataPointsRadius={1}
-                    textColor={colors.text}
-                    textFontSize={8}
-                    areaChart
-                    curved
-                />
-            ) : (
-                <Text style={{ color: "gray", marginTop: 20 }}>
-                    No completion data available.
-                </Text>
-            )}
-
-            <Text>
-                {groupedData[0]?.label} - {groupedData[groupedData.length - 1]?.label}
-            </Text>
+        <View>
+            <StockChart data={groupedData} />
         </View>
     );
 }

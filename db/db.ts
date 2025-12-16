@@ -112,7 +112,7 @@ export async function initiateDB() {
         // ============================
 
         const columns = await db.getAllAsync("PRAGMA table_info(completions)");
-        const hasAbsent = columns.some((col:any) => col.name === "absent");
+        const hasAbsent = columns.some((col: any) => col.name === "absent");
 
         if (!hasAbsent) {
             console.log("Adding 'absent' column to completions...");
@@ -245,11 +245,11 @@ export async function importDatabase() {
         await pickedFile.copy(destinationFile);
         openDatabase();
         alert('Database imported successfully!');
-       
 
-// await Updates.reloadAsync();
 
-       
+        // await Updates.reloadAsync();
+
+
     } catch (error) {
         await closeDatabase();
         openDatabase();

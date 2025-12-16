@@ -20,12 +20,8 @@ function GrowthContent() {
     ];
 
     return (
-        <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
             <View style={styles.container}>
-                <WindowPanel title="Growth Map" style={styles.panel}>
-                    <GrowthChart />
-                </WindowPanel>
-
                 {/* Filter Buttons Row */}
                 <View style={styles.filterRow}>
                     {filterOptions.map((option) => (
@@ -44,8 +40,15 @@ function GrowthContent() {
                         </Button3D>
                     ))}
                 </View>
+                <ScrollView style={{ flex: 1 }}>
+                    <WindowPanel title="Growth Map" style={styles.panel}>
+                        <GrowthChart />
+                    </WindowPanel>
+                </ScrollView>
+
+
             </View>
-        </ScrollView>
+        </View>
     );
 }
 
@@ -71,6 +74,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         gap: 8,
         paddingHorizontal: 4,
+        marginTop: 8
     },
     filterButton: {
         flex: 1,

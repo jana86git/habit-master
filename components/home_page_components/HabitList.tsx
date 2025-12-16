@@ -119,19 +119,22 @@ export default function HabitList() {
         fetchData();
     }, [selectedDate]);
 
-    const takeCompletionInput = async (habit: HabitRecord) => {
+    const handleHabitPress = async (habit: HabitRecord) => {
         const completed = completionMap.get(habit.id)?.completed;
         if (completed) {
+            // Uncheck the habit - delete only today's completion
             if (!db) return;
-            await db.runAsync(`DELETE FROM completions WHERE habit_id = ?`, [habit.id]);
+            await db.runAsync(
+                `DELETE FROM completions WHERE habit_id = ? AND date(log_date) = date(?)`,
+                [habit.id, new Date().toISOString().split("T")[0]]
+            );
             const newMap = new Map(completionMap);
             newMap.delete(habit.id);
             dispatch({ type: "SET_HABIT_COMPLETION_MAP", payload: newMap });
         } else {
-
+            // Open modal to collect completion details
             dispatch({ type: "SET_HABIT_COMPLETION_DETAILS", payload: habit });
         }
-
     };
 
     useEffect(() => {
@@ -179,7 +182,7 @@ export default function HabitList() {
                     <TouchableOpacity
                         style={styles.cardHeader}
                         disabled={!canCompleteHabit(habit)}
-                        onPress={() => takeCompletionInput(habit)}
+                        onPress={() => handleHabitPress(habit)}
                         activeOpacity={0.7}
                     >
                         <View style={styles.mainRow}>
@@ -304,7 +307,7 @@ export function HabitCompletionModal() {
     const { habitCompletionDetails, completionMap } = state;
 
     /** Toggle habit completion */
-    const toggleCompletion = async (habit: HabitRecord, value: string) => {
+    const handleHabitPressOnModal = async (habit: HabitRecord, value: string) => {
         const current = completionMap.get(habit.id);
         const newStatus = !current?.completed;
         const numericVal = Number(value);
@@ -383,12 +386,12 @@ export function HabitCompletionModal() {
                 await db.runAsync(
                     `INSERT INTO completions (id, habit_id, log_date, point)
                  VALUES (?, ?, ?, ?)`,
-                    [uuid.v4().toString(), habit.id, new Date().toISOString(), point]
+                    [uuid.v4().toString(), habit.id, new Date().toISOString().split("T")[0], point]
                 );
 
                 dispatch({ type: "SET_HABIT_COMPLETION_DETAILS", payload: null });
             } else {
-                await db.runAsync(`DELETE FROM completions WHERE habit_id = ?`, [habit.id]);
+                await db.runAsync(`DELETE FROM completions WHERE habit_id = ? AND date(log_date) = date(?)`, [habit.id, new Date().toISOString().split("T")[0]]);
             }
         } catch (error) {
             console.error("Error updating habit completion:", error);
@@ -402,7 +405,7 @@ export function HabitCompletionModal() {
             onClose={() => { sethabitCompletionDetails(null) }}
             heading="Habit Completion"
         >
-            {habitCompletionDetails && <ModalContent habit={habitCompletionDetails} toggleCompletion={(habit: HabitRecord, value: string) => { toggleCompletion(habit, value); }} />}
+            {habitCompletionDetails && <ModalContent habit={habitCompletionDetails} toggleCompletion={(habit: HabitRecord, value: string) => { handleHabitPressOnModal(habit, value); }} />}
 
 
 

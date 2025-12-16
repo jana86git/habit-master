@@ -206,7 +206,7 @@ ORDER BY datetime(created_at) DESC;
                 await db.runAsync(
                     `INSERT INTO completions (id, task_id, log_date, point)
            VALUES (?, ?, ?, ?);`,
-                    [uuid.v4().toString(), task.id, new Date().toISOString(), points]
+                    [uuid.v4().toString(), task.id, new Date().toISOString().split("T")[0], points]
                 );
             } else {
                 // Update local state immediately
@@ -236,7 +236,7 @@ ORDER BY datetime(created_at) DESC;
                 await db.runAsync(
                     `INSERT INTO completions (id, subtask_id, log_date, point)
            VALUES (?, ?, ?, ?);`,
-                    [uuid.v4().toString(), subtaskId, new Date().toISOString(), point]
+                    [uuid.v4().toString(), subtaskId, new Date().toISOString().split("T")[0], point]
                 );
             } else {
                 await db.runAsync(`DELETE FROM completions WHERE subtask_id = ?;`, [subtaskId]);
