@@ -17,15 +17,17 @@ import uuid from 'react-native-uuid'
 
 
 export default function CreateTask() {
+    const [scrollViewRef, setScrollViewRef] = useState<KeyboardAwareScrollView | null>(null);
+
     return (<View style={{ flex: 1, backgroundColor: colors.background }}>
         <TaskFormProvider>
             <KeyboardAwareScrollView
-
+                innerRef={(ref: any) => setScrollViewRef(ref)}
                 extraScrollHeight={20}       // ✅ adds some padding when keyboard opens
                 enableOnAndroid={true}       // ✅ works well on Android too
                 keyboardShouldPersistTaps="handled"  // ✅ allows tapping other inputs without dismissing keyboard
             >
-                <TaskForm />
+                <TaskForm scrollViewRef={scrollViewRef} />
             </KeyboardAwareScrollView>
             <SubmitButton />
 

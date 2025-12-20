@@ -65,5 +65,11 @@ export const styles = StyleSheet.create({
         fontFamily: fonts.bold,
         fontSize: 16,
         color: colors.text
+    },
+    subtasksHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8
     }
 })

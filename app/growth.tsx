@@ -1,5 +1,6 @@
 import Button3D from "@/components/button_3d/Button3D";
 import { GrowthChart } from "@/components/growths/GrowthChart";
+import GrowthConsistancyGrid from "@/components/growths/GrowthConsistancyGrid";
 import GrowthProvider, { useGrowth } from "@/components/growths/GrowthProvider";
 import WindowPanel from "@/components/window_panel/WindowPanel";
 import { colors } from "@/constants/colors";
@@ -43,6 +44,9 @@ function GrowthContent() {
                 <ScrollView style={{ flex: 1 }}>
                     <WindowPanel title="Growth Map" style={styles.panel}>
                         <GrowthChart />
+                    </WindowPanel>
+                    <WindowPanel title="Consistency Grid" style={styles.panel}>
+                        <GrowthConsistancyGrid />
                     </WindowPanel>
                 </ScrollView>
 

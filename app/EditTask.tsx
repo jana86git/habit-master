@@ -16,15 +16,18 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import uuid from "react-native-uuid";
 
 export default function EditTask() {
+  const [scrollViewRef, setScrollViewRef] = useState<KeyboardAwareScrollView | null>(null);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <TaskFormProvider>
         <KeyboardAwareScrollView
+          innerRef={(ref: any) => setScrollViewRef(ref)}
           extraScrollHeight={20}
           enableOnAndroid={true}
           keyboardShouldPersistTaps="handled"
         >
-          <TaskForm />
+          <TaskForm scrollViewRef={scrollViewRef} />
           <InitiateEditData />
         </KeyboardAwareScrollView>
         <SubmitButton />
@@ -66,7 +69,9 @@ function InitiateEditData() {
           negativeTaskPoint: taskData.negative_task_point,
           category: taskData.category,
           subtasks: subtasks || [],
-          reminder_event_id: taskData?.reminder_event_id || null
+          reminder_event_id: taskData?.reminder_event_id || null,
+          isEditMode: true,
+          originalEndDate: taskData.end_date ? new Date(taskData.end_date) : null
         };
 
         dispatch({ type: "INITIATE_EDIT_TASK_DATA", payload: formattedData });
@@ -131,19 +136,30 @@ function SubmitButton() {
       return;
     }
 
-    const start = new Date(startDate);
-    const today = new Date();
-    if (start.setHours(0, 0, 0, 0) < today.setHours(0, 0, 0, 0)) {
-      emitError("Start date cannot be in the past");
-      return;
-    }
-
     if (!endDate) {
       emitError("Please select an end date");
       return;
     }
 
-    if (endDate && new Date(endDate) < start) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+
+    // Check if end date was changed from original
+    const endDateChanged = state.originalEndDate
+      ? end.getTime() !== new Date(state.originalEndDate).setHours(0, 0, 0, 0)
+      : true; // If no original (create mode), always validate
+
+    // Only validate end date >= today if user changed it
+    if (endDateChanged && end < today) {
+      emitError("End date cannot be older than today");
+      return;
+    }
+
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    if (end < start) {
       emitError("End date cannot be before start date");
       return;
     }

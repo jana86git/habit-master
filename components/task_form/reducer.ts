@@ -16,7 +16,9 @@ export const initialState: InitialState = {
   negativeTaskPoint: 3,
   category: null,
   subtasks: [],
-  reminder_event_id: null
+  reminder_event_id: null,
+  isEditMode: false,
+  originalEndDate: null
 }
 export function reducer(state: InitialState, action: Action): InitialState {
   switch (action.type) {
@@ -37,6 +39,8 @@ export function reducer(state: InitialState, action: Action): InitialState {
       return { ...state, category: action.payload };
     case "INITIATE_EDIT_TASK_DATA":
       return action.payload
+    case "SET_EDIT_MODE":
+      return { ...state, isEditMode: action.payload };
 
 
     // Subtasks

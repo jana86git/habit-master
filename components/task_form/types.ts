@@ -1,43 +1,45 @@
-export interface Subtask{
+export interface Subtask {
   id: string
   name: string,
   point: number,
   task_id: string
 }
 export interface InitialState {
-   taskName: string;
-    startDate: Date;
-    endDate: Date | null;
-    reminderTime: Date | null;
-    taskPoint: number;
-    negativeTaskPoint: number;
-    category:string | null;
-    subtasks: Subtask[];
-    reminder_event_id: string | null;
+  taskName: string;
+  startDate: Date;
+  endDate: Date | null;
+  reminderTime: Date | null;
+  taskPoint: number;
+  negativeTaskPoint: number;
+  category: string | null;
+  subtasks: Subtask[];
+  reminder_event_id: string | null;
+  isEditMode: boolean;
+  originalEndDate: Date | null; // Track original end date for edit validation
 }
 
 
 
 export interface Task {
-    id: string;
-    task_name: string;
-    task_point: number;
-    negative_task_point: number;
-    start_date: string;
-    end_date: string | null;
-    category: string | null;
-    
+  id: string;
+  task_name: string;
+  task_point: number;
+  negative_task_point: number;
+  start_date: string;
+  end_date: string | null;
+  category: string | null;
+
 }
 
 export interface TaskWithSubtask {
-    id: string;
-    task_name: string;
-    task_point: number;
-    negative_task_point: number;
-    start_date: string;
-    end_date: string | null;
-    category: string | null;
-    subtasks: Subtask[];
+  id: string;
+  task_name: string;
+  task_point: number;
+  negative_task_point: number;
+  start_date: string;
+  end_date: string | null;
+  category: string | null;
+  subtasks: Subtask[];
 }
 
 export type TaskResponse = {
@@ -63,6 +65,7 @@ export type Action =
   | { type: "SET_NEGATIVE_TASK_POINT"; payload: number }
   | { type: "SET_CATEGORY"; payload: string | null }
   | { type: "INITIATE_EDIT_TASK_DATA"; payload: InitialState }
+  | { type: "SET_EDIT_MODE"; payload: boolean }
 
   // Subtasks
   | { type: "ADD_SUBTASK"; payload: Subtask }
@@ -71,4 +74,3 @@ export type Action =
   | { type: "SET_SUBTASKS"; payload: Subtask[] };
 
 
-    

@@ -1,22 +1,31 @@
 import { colors } from "@/constants/colors";
 import { fonts } from "@/constants/fonts";
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Button3D from "../button_3d/Button3D";
 import TextInputComponent from "../text_input/TextInput";
+import WindowModal from "../window_modal/WindowModal";
 import { useTaskForm } from "./TaskFormContext";
 import { styles } from "./styles";
 import { Subtask } from "./types";
 
-export default function TaskForm() {
+interface TaskFormProps {
+  scrollViewRef?: KeyboardAwareScrollView | null;
+}
+
+export default function TaskForm({ scrollViewRef }: TaskFormProps) {
   const { state, dispatch } = useTaskForm();
+  const { isEditMode } = state;
   const [showStartDate, setShowStartDate] = useState(false);
   const [showEndDate, setShowEndDate] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
 
   const [subtaskName, setSubtaskName] = useState("");
   const [subtaskPoint, setSubtaskPoint] = useState("");
+  const [showSubtaskModal, setShowSubtaskModal] = useState(false);
 
   const addSubtask = () => {
     if (!subtaskName) return;
@@ -26,6 +35,12 @@ export default function TaskForm() {
     });
     setSubtaskName("");
     setSubtaskPoint("");
+    setShowSubtaskModal(false);
+
+    // Scroll to bottom after subtask is added
+    setTimeout(() => {
+      scrollViewRef?.scrollToEnd(true);
+    }, 100);
   };
 
   const removeSubtask = (index: number) => {
@@ -55,7 +70,7 @@ export default function TaskForm() {
       <View style={styles.dateWrapper}>
         <View style={styles.date_cell}>
           {/* Start Date */}
-          <Button3D onClick={() => setShowStartDate(true)}>
+          <Button3D onClick={() => !isEditMode && setShowStartDate(true)} disabled={isEditMode}>
             <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
               <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>Start Date</Text>
             </View>
@@ -63,7 +78,7 @@ export default function TaskForm() {
           <Text style={styles.selectedDate}>
             {state.startDate.toLocaleDateString("en-GB")}
           </Text>
-          {showStartDate && (
+          {!isEditMode && showStartDate && (
             <DateTimePicker
               value={state.startDate}
               mode="date"
@@ -152,34 +167,21 @@ export default function TaskForm() {
         onChangeText={(text) => dispatch({ type: "SET_CATEGORY", payload: text })}
       />
       {/* Subtasks Section */}
-      {/* Subtasks Section */}
       <View style={{ marginTop: 20 }}>
-        <Text style={styles.subTitle}>Subtasks</Text>
+        {/* Subtasks Header with + Button */}
+        <View style={styles.subtasksHeader}>
+          <Text style={styles.subTitle}>Subtasks</Text>
+          <Button3D
+            onClick={() => setShowSubtaskModal(true)}
+          >
+            <Ionicons name="add" size={28} color={colors.textOnPrimary} />
+          </Button3D>
+        </View>
 
-        <TextInputComponent
-          placeholder="Subtask Name"
-          label="Subtask Name"
-          value={subtaskName}
-          onChangeText={setSubtaskName}
-
-        />
-        <TextInputComponent
-          placeholder="Points"
-          label="Subtask Points"
-          value={subtaskPoint}
-          onChangeText={setSubtaskPoint}
-          keyboardType="numeric"
-
-        />
-        <Button3D onClick={addSubtask}>
-          <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
-            <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>Add Subtask</Text>
-          </View>
-        </Button3D>
-
+        {/* Added Subtasks List */}
         {state.subtasks.map((item, index) => (
-          <View key={index} style={styles?.subtask_card} >
-            <Text style={styles?.subtask_name}>
+          <View key={index} style={styles.subtask_card}>
+            <Text style={styles.subtask_name}>
               {item.name} - {item.point} pts
             </Text>
             <TouchableOpacity onPress={() => removeSubtask(index)}>
@@ -187,6 +189,34 @@ export default function TaskForm() {
             </TouchableOpacity>
           </View>
         ))}
+
+        {/* Subtask Modal */}
+        <WindowModal
+          visible={showSubtaskModal}
+          onClose={() => setShowSubtaskModal(false)}
+          label="Add Subtask"
+        >
+          <View style={{ padding: 8 }}>
+            <TextInputComponent
+              placeholder="Subtask Name"
+              label="Subtask Name"
+              value={subtaskName}
+              onChangeText={setSubtaskName}
+            />
+            <TextInputComponent
+              placeholder="Points"
+              label="Subtask Points"
+              value={subtaskPoint}
+              onChangeText={setSubtaskPoint}
+              keyboardType="numeric"
+            />
+            <Button3D onClick={addSubtask}>
+              <View style={{ width: "100%", alignItems: "center", paddingVertical: 8 }}>
+                <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>Add Subtask</Text>
+              </View>
+            </Button3D>
+          </View>
+        </WindowModal>
       </View>
 
 
