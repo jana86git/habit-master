@@ -1,4 +1,6 @@
-import { Subtask, TaskWithSubtask } from "@/components/task_form/types";
+import Button3D from "@/components/button_3d/Button3D";
+import FullScreenLoader from "@/components/fullscreen_loader/FullScreenLoader";
+import { Filter, Subtask, TaskWithSubtask } from "@/components/task_form/types";
 import WindowPanel, { ActionIcon } from "@/components/window_panel/WindowPanel";
 import { colors } from "@/constants/colors";
 import { emitError } from "@/constants/emitError";
@@ -20,27 +22,69 @@ import {
 
 export default function Tasks() {
     const [tasks, setTasks] = useState<TaskWithSubtask[]>([]);
+    const [filter, setFilter] = useState<Filter>("all");
+    const [loading, setLoading] = useState<boolean>(false);
 
     // ✅ Fetch tasks + subtasks separately and group using a Map
-    async function fetchTasks(page = 1, limit = 10): Promise<void> {
+    async function fetchTasks(filterType: Filter = "all", page = 1, limit = 10): Promise<void> {
         if (!db) return;
+        setLoading(true);
         const offset = (page - 1) * limit;
 
         try {
-            // 1️⃣ Fetch tasks
-            const tasksQuery = `
-        SELECT 
-          id,
-          task_name,
-          category,
-          start_date,
-          end_date,
-          task_point,
-          negative_task_point
-        FROM tasks
-        ORDER BY created_at DESC
-        LIMIT ? OFFSET ?;
-      `;
+            // 1️⃣ Fetch tasks with filter based on completions table
+            let tasksQuery = "";
+
+            if (filterType === "completed") {
+                // Show only tasks that have at least one completion record
+                tasksQuery = `
+                    SELECT DISTINCT
+                        t.id,
+                        t.task_name,
+                        t.category,
+                        t.start_date,
+                        t.end_date,
+                        t.task_point,
+                        t.negative_task_point
+                    FROM tasks t
+                    INNER JOIN completions c ON t.id = c.task_id
+                    ORDER BY t.created_at DESC
+                    LIMIT ? OFFSET ?;
+                `;
+            } else if (filterType === "incompleted") {
+                // Show only tasks that have NO completion records
+                tasksQuery = `
+                    SELECT 
+                        t.id,
+                        t.task_name,
+                        t.category,
+                        t.start_date,
+                        t.end_date,
+                        t.task_point,
+                        t.negative_task_point
+                    FROM tasks t
+                    LEFT JOIN completions c ON t.id = c.task_id
+                    WHERE c.id IS NULL
+                    ORDER BY t.created_at DESC
+                    LIMIT ? OFFSET ?;
+                `;
+            } else {
+                // Show all tasks
+                tasksQuery = `
+                    SELECT 
+                        id,
+                        task_name,
+                        category,
+                        start_date,
+                        end_date,
+                        task_point,
+                        negative_task_point
+                    FROM tasks
+                    ORDER BY created_at DESC
+                    LIMIT ? OFFSET ?;
+                `;
+            }
+
             const tasksRaw = await db.getAllAsync(tasksQuery, [limit, offset]);
             if (!tasksRaw || tasksRaw.length === 0) {
                 setTasks([]);
@@ -81,6 +125,8 @@ export default function Tasks() {
         } catch (error) {
             console.error("Failed to fetch tasks:", error);
             Alert.alert("Error", "Failed to fetch tasks");
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -89,7 +135,7 @@ export default function Tasks() {
         try {
             if (!db) return;
             await db.runAsync(`DELETE FROM tasks WHERE id = ?`, [id]);
-            fetchTasks();
+            fetchTasks(filter);
         } catch (error) {
             console.error("Failed to delete task:", error);
             Alert.alert("Error", "Failed to delete task");
@@ -105,7 +151,7 @@ export default function Tasks() {
                 return;
             }
             await db.runAsync(`DELETE FROM subtasks WHERE id = ?`, [id]);
-            fetchTasks();
+            fetchTasks(filter);
         } catch (error) {
             console.error("Failed to delete subtask:", error);
             Alert.alert("Error", "Failed to delete subtask");
@@ -222,29 +268,61 @@ export default function Tasks() {
     };
 
     useEffect(() => {
-        fetchTasks();
-    }, []);
+        fetchTasks(filter);
+    }, [filter]);
 
     useEffect(() => {
-        // subscribe to the habit refetch
+        // subscribe to the task refetch
 
         async function handleTaskRefetch() {
-            await fetchTasks();
+            await fetchTasks(filter);
         }
-
-
 
         eventEmitter.on('task-refetch', handleTaskRefetch);
 
-
         return () => {
             eventEmitter.off('task-refetch', handleTaskRefetch);
-
         };
-    }, []);
+    }, [filter]);
 
     return (
         <View style={styles.container}>
+            <FullScreenLoader show={loading} />
+            {/* Filter Button Group */}
+            <View style={styles.filterButtonGroup}>
+                <Button3D
+                    onClick={() => setFilter("all")}
+                    active={filter === "all"}
+                >
+                    <View style={{ padding: 4 }}>
+                        <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>
+                            All
+                        </Text>
+                    </View>
+
+                </Button3D>
+                <Button3D
+                    onClick={() => setFilter("completed")}
+                    active={filter === "completed"}
+                >
+                    <View style={{ padding: 4 }}>
+                        <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>
+                            Completed
+                        </Text>
+                    </View>
+                </Button3D>
+                <Button3D
+                    onClick={() => setFilter("incompleted")}
+                    active={filter === "incompleted"}
+                >
+                    <View style={{ padding: 4 }}>
+                        <Text style={{ color: colors.textOnPrimary, fontFamily: fonts.bold }}>
+                            Incompleted
+                        </Text>
+                    </View>
+                </Button3D>
+            </View>
+
             <FlatList
                 data={tasks}
                 keyExtractor={(item) => item.id}
@@ -258,6 +336,14 @@ export default function Tasks() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
+    filterButtonGroup: {
+        flexDirection: "row",
+        justifyContent: "flex-start",
+        alignItems: "center",
+        gap: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+    },
     taskName: {
         fontSize: 16,
         fontFamily: fonts.bold,

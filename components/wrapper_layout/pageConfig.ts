@@ -45,7 +45,7 @@ export const pageConfigs: PageConfig[] = [
     {
         page: "/tasks",
         pageTitle: "Your Tasks",
-        headerType: "back-button",
+        headerType: "none",
         footerShown: true
     },
     {

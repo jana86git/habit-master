@@ -42,6 +42,9 @@ export interface TaskWithSubtask {
   subtasks: Subtask[];
 }
 
+export type Filter = "all" | "completed" | "incompleted";
+
+
 export type TaskResponse = {
   id: string;
   task_name: string;
